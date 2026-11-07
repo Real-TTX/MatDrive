@@ -113,6 +113,10 @@ public static class LocationEndpoints
                 {
                     await LocationService.WriteZipAsync(zip.Value!, output, http.RequestAborted);
                 }
+                catch (Exception) when (http.RequestAborted.IsCancellationRequested)
+                {
+                    // the browser went away (a cancelled download): nothing to tell
+                }
                 catch (Exception ex) when (ex is not OperationCanceledException)
                 {
                     // the headers are out: a broken zip must not look complete
@@ -234,21 +238,28 @@ public static class LocationEndpoints
         live.MapGet("/{id:long}/search", async (long id, string? path, string? q, bool? content, bool? hidden, HttpContext http, AppDbContext db, LocationConnections connections, CurrentUser me) =>
         {
             var started = false;
-            var found = await LocationSearch.RunAsync(db, connections, me.RequiredId, id, path, q, content == true, hidden == true, async e =>
+            try
             {
-                if (!started)
+                var found = await LocationSearch.RunAsync(db, connections, me.RequiredId, id, path, q, content == true, hidden == true, async e =>
                 {
-                    started = true;
-                    http.Response.ContentType = "application/x-ndjson; charset=utf-8";
-                    http.Response.Headers.CacheControl = "no-store";
-                    http.Features.Get<IHttpResponseBodyFeature>()?.DisableBuffering();
-                }
+                    if (!started)
+                    {
+                        started = true;
+                        http.Response.ContentType = "application/x-ndjson; charset=utf-8";
+                        http.Response.Headers.CacheControl = "no-store";
+                        http.Features.Get<IHttpResponseBodyFeature>()?.DisableBuffering();
+                    }
 
-                await JsonSerializer.SerializeAsync(http.Response.Body, e, Json, http.RequestAborted);
-                await http.Response.Body.WriteAsync("\n"u8.ToArray(), http.RequestAborted);
-                await http.Response.Body.FlushAsync(http.RequestAborted);
-            }, http.RequestAborted);
-            return found ? Results.Empty : Results.NotFound();
+                    await JsonSerializer.SerializeAsync(http.Response.Body, e, Json, http.RequestAborted);
+                    await http.Response.Body.WriteAsync("\n"u8.ToArray(), http.RequestAborted);
+                    await http.Response.Body.FlushAsync(http.RequestAborted);
+                }, http.RequestAborted);
+                return found ? Results.Empty : Results.NotFound();
+            }
+            catch (OperationCanceledException) when (http.RequestAborted.IsCancellationRequested)
+            {
+                return Results.Empty; // "Stop" in the browser closes the request: the walk ends here
+            }
         });
 
         // the folders and files of a drive for "Copy from My Drive" (one level at a time)
@@ -382,6 +393,10 @@ public static class LocationEndpoints
                 {
                     http.Abort(); // the file got shorter while it was read: the browser must not take it as complete
                 }
+            }
+            catch (Exception) when (http.RequestAborted.IsCancellationRequested)
+            {
+                // the browser went away (a video that jumps to another place, a cancelled download): nothing to tell
             }
             catch (Exception ex) when (ex is not OperationCanceledException)
             {

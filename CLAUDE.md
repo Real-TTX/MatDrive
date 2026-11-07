@@ -23,6 +23,8 @@ English and German (catalog in `Resources/Texts/*.json`). Accent: violet `#8e24a
   `Host=localhost;Port=4812;Username=matdrive;Password=matdrive;Database=postgres` while the local stack runs); each test creates, migrates and drops a database of its own
   (`WebDavServerTests`: the whole app in memory with `WebApplicationFactory`, one database for the class, every test with its own people).
   `TextCatalogTests` checks every text key of the server code and of the scripts (`t('Drive.X')` → `Js.Drive.X`) in English and German.
+  `LocationRemoteTests` run the providers against real SFTP/SMB/FTP/WebDAV servers when `MATDRIVE_TEST_LOCATIONS` is set (`loctest` = the throwaway compose project
+  `matdrive-loctest`: SFTP 47222 `/upload`, SMB 47445 share `public`, FTP 47021, WebDAV 47080, `tester`/`Secret123`; or `host=…;sftp=…;smb=…;ftp=…;webdav=…;user=…;password=…`).
 - **Run / test the app: always rebuild the container** (`./scripts/redeploy.ps1`, `-Clean` for empty volumes). CSS, JS and cshtml are baked into the image.
 - **Test account (always):** `admin@example.com` / `Start12345` – the first account of a fresh stack (it becomes the administrator).
 - **Real tests are end to end in a browser** (Playwright with the installed Edge, `channel: 'msedge'`): upload (also drag & drop and a folder), preview, move, share, link,
@@ -49,7 +51,12 @@ src/MatDrive
                              FileEndpoints (/files/{id}/content, /files/zip, /live/drive/*, the file API for MatOffice), LinkEndpoints (/l/{token}/…, LinkGate = the password cookie)
   Services/Office/           OfficeService: settings (URL, internal URL, API key encrypted, MatDrive URL for MatOffice), check (/api/v1/host/formats), open (session at
                              MatOffice, a time-limited token for /api/v1/office/files/{id}/content), new documents (/api/v1/host/new)
-  Services/Locations/        storage locations like MatFile (LocationAccess; providers and browsing)
+  Services/Locations/        the storage locations (like MatFile), static business layer: LocationAccess (role of a person: everyone/list, read-only = Viewer),
+                             LocationAdmin (administrators: list, save with secrets encrypted, test, delete, access), LocationService (+ .Transfers: browse, upload, folder,
+                             rename, delete, text, properties/rwx, move/copy across locations, to and from the drives, zip, unzip), LocationSearch (below a folder, NDJSON);
+                             ILocationProvider + LocalProvider/SmbProvider/SftpProvider/FtpProvider/WebDavProvider, PathGuard (every path), ConnectionPool (lent
+                             connections), LocationConnections (singleton: providers, secrets, reachability in memory), LocationMonitor (check every 5 min), LocationErrors,
+                             LocationEndpoints (AddLocations, MapLocationEndpoints: /location-files/{id}/content|zip, /live/locations/*)
   Services/WebDav/           the WebDAV server at /dav/ (RFC 4918, class 1 and 2): WebDavEndpoints (AddWebDav, MapWebDav), WebDavHandler (.Read: GET/HEAD, PROPFIND,
                              PROPPATCH; .Write: PUT, DELETE, MKCOL, COPY/MOVE, LOCK/UNLOCK), DavStore (the tree over the business layer), DavAuthenticator (Basic),
                              DavLockManager (locks in memory), DavPath (paths, hrefs, Destination), DavIfHeader, DavXml (bodies, DavProperties, DavMultiStatus)
@@ -61,10 +68,12 @@ src/MatDrive
   Platform/                  MatDrivePlatform (tiles, settings, actions for Mattiverse), MatDriveIdentityUsers
   Controls/                  ONE code base per control: <md-field>, <md-buttons>, <md-table>, <md-tabs>/<md-tab>
   Pages/                     Drive/ (Index = the explorer: /drive, /drive/folder/{id}, /drive/shared-drive/{id}, shared, recent, starred, trash, search; Item = the tabs of an item;
-                             Edit = the text editor), Drives/ (shared drives), Public/ (links /l/{token}), Account/ (+ AppPasswords), Admin/ (Users, Locations, Integrations,
-                             Activity, System), About
-  wwwroot/js/                util.js (t, el, icon, request, dialog …), drive.js (the menu "New" on every page), explorer.js (uploads, drag & drop, menus, preview, picker)
-  wwwroot/css/app.css        accent + the styles of the explorer (prefix md-)
+                             Edit = the text editor), Drives/ (shared drives), Public/ (links /l/{token}), Account/ (+ AppPasswords), Admin/ (Users, Locations: list, Edit =
+                             General, Access, Integrations, Activity, System), Locations/ (Index = a location like the explorer: /locations/{id}/{folder…}; Edit = the
+                             text editor /locations/edit/{id}?path=), About
+  wwwroot/js/                util.js (t, el, icon, request, dialog …), drive.js (the menu "New" on every page), explorer.js (uploads, drag & drop, menus, preview, picker),
+                             locations.js (the same for a storage location: uploads, menus, pickers, properties, search, the text editor)
+  wwwroot/css/app.css        accent + the styles of the explorer (prefix md-); locations.css: what the storage locations add (md-loc-, md-perm)
 tests/MatDrive.Tests         unit + database tests
 ```
 
@@ -84,6 +93,17 @@ trash. Everything goes through the business layer (`DriveAccess` decides: a view
 and `Overwrite: T` go into the trash, saves of one person within 2 minutes are one version. Locks live in memory (`DavLockManager`: at most an hour, 500 a person, gone with a
 restart; a LOCK on a free name makes an empty file). The quota answers 507 (before the bytes when the length is announced), the upload limit 413. PROPFIND: depth 0 or 1, one
 query for the children; PROPPATCH is answered, not stored. The Windows Explorer sends Basic only over HTTPS (or with `BasicAuthLevel=2`); `git push` over http is a client for tests.
+
+**Storage locations** (`/locations/{id}`, administration `/Admin/Locations`): folders of the server (below `StorageRoot`, default `/storage`: the bind mounts of the NAS;
+never the data folder) and shares (SMB, SFTP, FTP, WebDAV), browsed live: their files are not in the database. Who may: everyone with a role (Viewer/Editor) or the people
+of the list; administrators manage them but see the files only when they are on the list; read-only and switched off are checked in `LocationAccess`, so every function of
+the business layer refuses writes (404 like the drives). Every path goes through `PathGuard` (no `..`, links resolved for local folders); passwords and SFTP keys are
+encrypted with DataProtection and never leave `LocationAdmin` (an empty field keeps the stored one). Errors of a server become worded messages (`Locations.Error.*`, the
+server's own words in brackets), never a 500. Uploads are streamed in one request per file into a hidden temporary name (`.<guid>.matdrive-part`) and renamed when complete;
+downloads stream with ranges and the CSP of `FileEndpoints.Serve`; a zip is written while it downloads. Copies between locations and to the drives go through MatDrive
+(`FileService.UploadAsync`: quota and size checked); inside one location the server moves (and copies where it can: local, WebDAV COPY). Remote connections are pooled
+(`ConnectionPool`, one request at a time each, closed after 2 idle minutes). `LocationMonitor` checks every active location every 5 minutes (results in memory: the
+dot/cross in the menu, the list, the platform health `locations` and the action `checkLocations`). Every change is an activity `location` (target = the name of the location).
 
 **UI (MatDesign rules)**: CRUD = list page (toolbar above, table/gallery, pager under it, actions left below) + separate edit page (Save, Back, space, Delete);
 an item and a shared drive have **tabs**. The explorer is the special UI of the app (like a file manager), built on the toolkit. Icons via `Ui.Icon` (toolkit sprite + `wwwroot/img/app-icons.svg`).

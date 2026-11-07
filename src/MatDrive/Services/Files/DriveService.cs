@@ -198,7 +198,7 @@ public static class DriveService
         if (drive.Kind == DriveKind.Personal && drive.OwnerId is { } owner)
         {
             var own = await db.Users.AsNoTracking().Where(u => u.Id == owner).Select(u => u.QuotaBytes).FirstOrDefaultAsync(ct);
-            quota = own ?? (await db.SystemSettings.AsNoTracking().Select(s => (long?)s.DefaultQuotaBytes).FirstOrDefaultAsync(ct) ?? 0);
+            quota = own ?? (await db.SystemSettings.AsNoTracking().Where(s => s.Id == 1).Select(s => (long?)s.DefaultQuotaBytes).FirstOrDefaultAsync(ct) ?? new SystemSetting().DefaultQuotaBytes);
         }
 
         return new DriveUsage(drive.UsedBytes, quota is > 0 ? quota : null);

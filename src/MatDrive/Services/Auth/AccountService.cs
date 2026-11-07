@@ -29,18 +29,7 @@ public sealed class AccountService(AppDbContext db, PasswordService passwords)
 
     public async Task<bool> AnyUserAsync() => await db.Users.IgnoreQueryFilters().AnyAsync();
 
-    public async Task<SystemSetting> SettingsAsync()
-    {
-        var s = await db.SystemSettings.FirstOrDefaultAsync(x => x.Id == 1);
-        if (s is null)
-        {
-            s = new SystemSetting { Id = 1 };
-            db.SystemSettings.Add(s);
-            await db.SaveChangesAsync();
-        }
-
-        return s;
-    }
+    public Task<SystemSetting> SettingsAsync() => SettingsStore.LoadAsync(db);
 
     /// <summary>Creates an account. The very first account is an administrator.</summary>
     public async Task<(User? User, FieldError? Error)> RegisterAsync(string email, string displayName, string password, string? timeZone = null, UserRole? role = null, string? language = null)

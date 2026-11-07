@@ -1,0 +1,82 @@
+@page "/drives/members"
+@model MatDrive.Pages.Drives.MembersModel
+@inject CurrentUser Me
+@{
+    ViewData["Title"] = Model.DriveName;
+    ViewData["PageSub"] = L["Drives.Members.Sub"].Value;
+    ViewData["Crumbs"] = new List<(string, string?)> { (L["Drive.SharedDrives"].Value, "/drives"), (Model.DriveName, $"/drive/shared-drive/{Model.Id}"), (L["Drives.Tab.Members"].Value, null) };
+}
+
+<md-tabs label="@L["Drives.One"]">
+    <md-tab href="/drives/edit?id=@Model.Id">@L["Drives.Tab.General"]</md-tab>
+    <md-tab href="/drives/members?id=@Model.Id" active="true">@L["Drives.Tab.Members"]</md-tab>
+</md-tabs>
+
+<div class="mat-list">
+    <md-table caption="@L["Drives.Tab.Members"]">
+        <thead><tr><th scope="col">@L["Members.Col.Person"]</th><th scope="col">@L["Drives.Col.Role"]</th><th scope="col"><span class="mat-sr-only">@L["Common.Actions"]</span></th></tr></thead>
+        <tbody>
+            @foreach (var m in Model.Members)
+            {
+                <tr>
+                    <td data-label="@L["Members.Col.Person"]"><div class="mat-table__name"><span class="mat-avatar mat-avatar--sm" aria-hidden="true">@Ui.Initials(m.Name)</span><span>@m.Name @(m.UserId == Me.Id ? L["Drive.MeInBrackets"].Value : "")<small class="mat-mono">@m.Email</small></span></div></td>
+                    <td data-label="@L["Drives.Col.Role"]">
+                        @if (Model.CanManage)
+                        {
+                            <form method="post" asp-page-handler="Role" asp-route-id="@Model.Id" asp-route-memberId="@m.UserId" class="md-inline">
+                                <label class="mat-sr-only" for="role-@m.UserId">@L["Drives.Col.Role"]: @m.Name</label>
+                                <select class="mat-input mat-input--sm" id="role-@m.UserId" name="role" data-autosubmit>
+                                    @foreach (var r in Model.Roles)
+                                    {
+                                        <option value="@r.Value" selected="@(r.Value == m.Role.ToString())">@r.Label</option>
+                                    }
+                                </select>
+                                <button type="submit" class="mat-btn mat-btn--ghost mat-btn--sm">@L["Common.Save"]</button>
+                            </form>
+                        }
+                        else
+                        {
+                            <span class="mat-pill mat-pill--plain">@L["Roles." + m.Role]</span>
+                        }
+                    </td>
+                    <td class="mat-table__cell-actions">
+                        <div class="mat-table__actions">
+                            @if (Model.CanManage || m.UserId == Me.Id)
+                            {
+                                <form method="post" asp-page-handler="Remove" asp-route-id="@Model.Id" asp-route-memberId="@m.UserId">
+                                    <button type="submit" class="mat-btn mat-btn--ghost mat-btn--icon mat-btn--sm md-danger" aria-label="@L[m.UserId == Me.Id ? "Drives.Leave" : "Drives.RemoveNamed", m.Name]" data-tip="@L[m.UserId == Me.Id ? "Drives.Leave" : "Drives.Remove"]"
+                                            data-confirm="@L[m.UserId == Me.Id ? "Drives.LeaveConfirm" : "Drives.RemoveConfirm", m.Name]" data-confirm-ok="@L[m.UserId == Me.Id ? "Drives.Leave" : "Drives.Remove"]">@Ui.Icon(m.UserId == Me.Id ? "logout" : "x")</button>
+                                </form>
+                            }
+                        </div>
+                    </td>
+                </tr>
+            }
+        </tbody>
+    </md-table>
+
+    @if (Model.CanManage)
+    {
+        <form class="mat-form md-mt" method="post" asp-page-handler="Add" asp-route-id="@Model.Id" novalidate>
+            <partial name="_FormSummary" model="ViewData.ModelState" />
+            <div class="mat-card">
+                <div class="mat-card__body mat-form">
+                    <md-field name="Email" kind="email" label="@L["Drives.AddMember"]" value="@Model.Email" placeholder="name@example.com" autocomplete="off" required msg-required="@L["Account.Login.Email.Required"]" hint="@L["Item.ShareWith.Hint"]" />
+                    <md-field name="NewRole" kind="radios" label="@L["Drives.Col.Role"]" value="@Model.NewRole" options="Model.Roles" hint="@L["Drives.Roles.Hint"]" />
+                </div>
+            </div>
+            <div class="mat-btn-row">
+                <button type="submit" class="mat-btn mat-btn--primary">@Ui.Icon("plus")<span>@L["Drives.AddMember.Button"]</span></button>
+                <a class="mat-btn mat-btn--secondary" href="/drive/shared-drive/@Model.Id">@Ui.Icon("back")<span>@L["Common.Back"]</span></a>
+            </div>
+        </form>
+    }
+    else
+    {
+        <div class="mat-actions"><a class="mat-btn mat-btn--secondary" href="/drive/shared-drive/@Model.Id">@Ui.Icon("back")<span>@L["Common.Back"]</span></a></div>
+    }
+</div>
+
+@section Scripts {
+    <script src="~/js/autosubmit.js" asp-append-version="true"></script>
+}

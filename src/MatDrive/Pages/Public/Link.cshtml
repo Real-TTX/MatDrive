@@ -1,0 +1,128 @@
+@page "/l/{token:guid}"
+@model MatDrive.Pages.Public.LinkModel
+@using MatDrive.Services.Files
+@{
+    Layout = "_LayoutAuth";
+    ViewData["Title"] = Model.Locked ? L["Links.Protected"].Value : Model.Current.Name;
+    ViewData["AuthClass"] = Model.Locked ? null : "md-public-wrap";
+}
+
+@if (Model.Locked)
+{
+    <div class="mat-auth__card">
+        <div class="mat-auth__brand">
+            @Ui.Logo("lg")
+            <h1>@L["Links.Protected"]</h1>
+            <p class="mat-muted">@L["Links.Protected.Text"]</p>
+        </div>
+        <form class="mat-form" method="post" novalidate>
+            <partial name="_FormSummary" model="ViewData.ModelState" />
+            <md-field name="Password" kind="password" label="@L["Links.Password"]" required autocomplete="current-password" autofocus msg-required="@L["Links.Password.Required"]" />
+            <button type="submit" class="mat-btn mat-btn--primary mat-btn--block">@Ui.Icon("lock")<span>@L["Links.Unlock"]</span></button>
+        </form>
+    </div>
+}
+else
+{
+    var file = Model.Current.Kind == NodeKind.File;
+    var cat = file ? FileTypes.CategoryOf(Model.Current.Name, Model.Current.MimeType) : FileTypes.Folder;
+    var preview = file ? FileTypes.PreviewOf(Model.Current.Name, Model.Current.Size) : "none";
+    var content = $"{Model.Base}/files/{Model.Current.Id}/content";
+    <div class="md-public" id="md-public" data-base="@Model.Base" data-folder="@Model.Current.Id">
+        <div class="md-public__head">
+            <span class="md-ficon md-ficon--@cat">@Ui.Icon(FileTypes.IconOf(cat))</span>
+            <div>
+                <h1>@Model.Current.Name</h1>
+                <p class="mat-muted">@L["Links.SharedThrough", Ui.AppName]@if (file) { <text> · </text>@Ui.Bytes(Model.Current.Size) }</p>
+            </div>
+        </div>
+
+        @if (Model.Path.Count > 1)
+        {
+            <nav class="mat-crumbs" aria-label="@L["Shell.Breadcrumb"]">
+                <ol>
+                    @for (var i = 0; i < Model.Path.Count; i++)
+                    {
+                        var c = Model.Path[i];
+                        if (i == Model.Path.Count - 1) { <li aria-current="page">@c.Name</li> }
+                        else { <li><a href="@Model.Base@(c.Id == Model.Link.Node.Id ? "" : "?f=" + c.Id)">@c.Name</a></li> }
+                    }
+                </ol>
+            </nav>
+        }
+
+        @if (file)
+        {
+            <div class="md-public__media">
+                @switch (preview)
+                {
+                    case "image": <img src="@content" alt="@Model.Current.Name" />; break;
+                    case "video": <video src="@content" controls></video>; break;
+                    case "audio": <audio src="@content" controls></audio>; break;
+                    case "pdf": <iframe src="@content" title="@Model.Current.Name"></iframe>; break;
+                    case "text": <pre data-text-src="@content">…</pre>; break;
+                    default: <p class="md-muted">@L["Drive.Preview.None"]</p>; break;
+                }
+            </div>
+            @if (Model.Link.Link.AllowDownload)
+            {
+                <div class="mat-btn-row mat-btn-row--plain">
+                    <a class="mat-btn mat-btn--primary" href="@content?download=true">@Ui.Icon("download")<span>@L["Drive.Download"]</span></a>
+                </div>
+            }
+        }
+        else
+        {
+            <div class="mat-list">
+                @if (Model.Listing.Items.Count == 0)
+                {
+                    <partial name="_Empty" model="@(new EmptyStateModel("folder-open", L["Drive.Folder.Empty"].Value, L["Links.FolderEmpty"].Value, true))" />
+                }
+                else
+                {
+                    <md-table caption="@Model.Current.Name">
+                        <thead><tr><th scope="col">@L["Common.Name"]</th><th scope="col" class="mat-hide-sm">@L["Drive.Col.Modified"]</th><th scope="col" class="mat-num">@L["Drive.Col.Size"]</th><th scope="col"><span class="mat-sr-only">@L["Common.Actions"]</span></th></tr></thead>
+                        <tbody>
+                            @foreach (var n in Model.Listing.Items)
+                            {
+                                var c = n.Category;
+                                <tr>
+                                    <td data-label="@L["Common.Name"]" class="mat-table__primary">
+                                        <a class="md-name" href="@(n.IsFolder ? $"{Model.Base}?f={n.Id}" : $"{Model.Base}?f={n.Id}")"><span class="md-ficon md-ficon--@c">@Ui.Icon(FileTypes.IconOf(c))</span><span class="md-name__text">@n.Name</span></a>
+                                    </td>
+                                    <td data-label="@L["Drive.Col.Modified"]" class="mat-mono mat-hide-sm">@Dates.Stamp(n.ModifiedDate, Model.Zone)</td>
+                                    <td data-label="@L["Drive.Col.Size"]" class="mat-num mat-mono">@(n.IsFolder ? "–" : Ui.Bytes(n.Size))</td>
+                                    <td class="mat-table__cell-actions">
+                                        <div class="mat-table__actions">
+                                            @if (Model.Link.Link.AllowDownload)
+                                            {
+                                                <a class="mat-btn mat-btn--ghost mat-btn--icon mat-btn--sm" href="@(n.IsFolder ? $"{Model.Base}/zip?ids={n.Id}" : $"{Model.Base}/files/{n.Id}/content?download=true")" aria-label="@L["Drive.Download"]: @n.Name" data-tip="@L["Drive.Download"]">@Ui.Icon("download")</a>
+                                            }
+                                        </div>
+                                    </td>
+                                </tr>
+                            }
+                        </tbody>
+                    </md-table>
+                }
+                <div class="mat-actions">
+                    @if (Model.Link.Link.AllowDownload && Model.Listing.Items.Count > 0)
+                    {
+                        <a class="mat-btn mat-btn--primary" href="@Model.Base/zip?ids=@Model.Current.Id">@Ui.Icon("download")<span>@L["Links.DownloadAll"]</span></a>
+                    }
+                    @if (Model.CanUpload)
+                    {
+                        <form method="post" action="@Model.Base/upload?f=@Model.Current.Id" enctype="multipart/form-data" class="md-link-upload" data-link-upload>
+                            @Html.AntiForgeryToken()
+                            <label class="mat-btn mat-btn--secondary">@Ui.Icon("upload")<span>@L["Drive.UploadFiles"]</span><input type="file" name="files" multiple hidden data-link-upload-input /></label>
+                        </form>
+                    }
+                </div>
+            </div>
+        }
+    </div>
+}
+
+@section Scripts {
+    <script src="~/js/link.js" asp-append-version="true"></script>
+}

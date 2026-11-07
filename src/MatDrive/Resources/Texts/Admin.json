@@ -26,13 +26,11 @@
   "System.RegistrationOpen.Hint": { "en": "Off: only administrators create new accounts.", "de": "Aus: nur Administratoren legen neue Konten an." },
   "System.PublicUrl": { "en": "Public address", "de": "Öffentliche Adresse" },
   "System.PublicUrl.Hint": { "en": "For the webhook addresses MatDrive shows. Empty: the address the page is opened at.", "de": "Für die Webhook-Adressen, die MatDrive anzeigt. Leer: die Adresse, unter der die Seite gerade aufgerufen wird." },
-  "System.PublicUrl.Invalid": { "en": "Please enter a full address like https://office.example.com, or leave it empty.", "de": "Bitte eine vollständige Adresse wie https://office.example.com eingeben oder das Feld leer lassen." },
+  "System.PublicUrl.Invalid": { "en": "Please enter a full address like https://drive.example.com, or leave it empty.", "de": "Bitte eine vollständige Adresse wie https://drive.example.com eingeben oder das Feld leer lassen." },
   "System.About": { "en": "About this installation", "de": "Über diese Installation" },
   "System.Version": { "en": "Version", "de": "Version" },
   "System.Database": { "en": "Database", "de": "Datenbank" },
   "System.Versions": { "en": "Versions", "de": "Versionen" },
   "System.Mail": { "en": "Mail", "de": "E-Mail" },
-  "System.Mail.Off": { "en": "Off (no MatSMTP)", "de": "Aus (kein MatSMTP)" },
-  "System.SharedDocuments": { "en": "Shared documents", "de": "Geteilte Dokumente" },
-  "System.LinkedDocuments": { "en": "Documents with a link", "de": "Dokumente mit Link" }
+  "System.Mail.Off": { "en": "Off (no MatSMTP)", "de": "Aus (kein MatSMTP)" }
 }

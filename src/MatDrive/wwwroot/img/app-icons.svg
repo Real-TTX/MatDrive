@@ -1,29 +1,26 @@
 <svg xmlns="http://www.w3.org/2000/svg" class="mat-sprite" width="0" height="0" aria-hidden="true" focusable="false">
-  <!-- The icons only MatDrive has, drawn like the toolkit's (24 x 24, a line of 2, round ends; the colour is the text colour).
-       The icons of the ribbons of the four apps are in icons-<app>.svg (only on the pages of that editor). -->
-  <symbol id="mat-i-matdrive" viewBox="0 0 24 24"><rect x='3' y='3' width='8' height='8' rx='2'/><rect x='13' y='3' width='8' height='8' rx='2'/><rect x='3' y='13' width='8' height='8' rx='2'/><rect x='13' y='13' width='8' height='8' rx='2'/></symbol>
-  <symbol id="mat-i-kind-docs" viewBox="0 0 24 24"><path d='M14 2.5H6.5A1.5 1.5 0 0 0 5 4v16a1.5 1.5 0 0 0 1.5 1.5h11A1.5 1.5 0 0 0 19 20V7.5z'/><path d='M14 2.5v5h5'/><path d='M8.5 12h7M8.5 15h7M8.5 18h4.5'/></symbol>
-  <symbol id="mat-i-kind-sheets" viewBox="0 0 24 24"><rect x='3.5' y='3.5' width='17' height='17' rx='1.5'/><path d='M3.5 9h17M3.5 14.5h17M9.5 3.5v17M15 3.5v17'/></symbol>
-  <symbol id="mat-i-kind-slides" viewBox="0 0 24 24"><rect x='2.5' y='4' width='19' height='12.5' rx='1.5'/><path d='M12 16.5V20M8.5 21h7'/><path d='M6.5 8h6M6.5 11h4'/><circle cx='16.5' cy='10' r='2.5'/></symbol>
-  <symbol id="mat-i-kind-base" viewBox="0 0 24 24"><ellipse cx='12' cy='5.5' rx='8' ry='3'/><path d='M4 5.5v13c0 1.7 3.6 3 8 3s8-1.3 8-3v-13'/><path d='M4 12c0 1.7 3.6 3 8 3s8-1.3 8-3'/></symbol>
-  <symbol id="mat-i-cursor" viewBox="0 0 24 24"><path d='M4.5 3.5 20 10l-7.2 2.3L10 19.5z'/></symbol>
-  <symbol id="mat-i-undo" viewBox="0 0 24 24"><path d='M9 14 4 9l5-5'/><path d='M4 9h10.5a5.5 5.5 0 0 1 0 11H11'/></symbol>
-  <symbol id="mat-i-redo" viewBox="0 0 24 24"><path d='m15 14 5-5-5-5'/><path d='M20 9H9.5a5.5 5.5 0 0 0 0 11H13'/></symbol>
-  <symbol id="mat-i-zoom-in" viewBox="0 0 24 24"><circle cx='10.5' cy='10.5' r='6.5'/><path d='m20.5 20.5-5.4-5.4M10.5 7.5v6M7.5 10.5h6'/></symbol>
-  <symbol id="mat-i-zoom-out" viewBox="0 0 24 24"><circle cx='10.5' cy='10.5' r='6.5'/><path d='m20.5 20.5-5.4-5.4M7.5 10.5h6'/></symbol>
-  <symbol id="mat-i-zoom-fit" viewBox="0 0 24 24"><path d='M3 8V4.5A1.5 1.5 0 0 1 4.5 3H8M16 3h3.5A1.5 1.5 0 0 1 21 4.5V8M21 16v3.5a1.5 1.5 0 0 1-1.5 1.5H16M8 21H4.5A1.5 1.5 0 0 1 3 19.5V16'/><rect x='8' y='8' width='8' height='8' rx='1'/></symbol>
-  <symbol id="mat-i-cloud-off" viewBox="0 0 24 24"><path d='m2 2 20 20'/><path d='M5.8 5.8A7 7 0 0 0 9 19h8.5a4.5 4.5 0 0 0 1.4-.2M21.3 15.6A4.5 4.5 0 0 0 17.5 10h-1.3A7 7 0 0 0 9.6 5.1'/></symbol>
-  <symbol id="mat-i-cloud-check" viewBox="0 0 24 24"><path d='M17.5 19H9a7 7 0 1 1 6.7-9h1.8a4.5 4.5 0 1 1 0 9z'/><path d='m9.5 14 2 2 4-4'/></symbol>
-  <symbol id="mat-i-share" viewBox="0 0 24 24"><circle cx='18' cy='5' r='3'/><circle cx='6' cy='12' r='3'/><circle cx='18' cy='19' r='3'/><path d='m8.6 13.5 6.8 4M15.4 6.5l-6.8 4'/></symbol>
+  <!-- The icons only MatDrive has, drawn like the toolkit's (24 x 24, a line of 2, round ends; the colour is the text colour). -->
+  <symbol id="mat-i-matdrive" viewBox="0 0 24 24"><path d='M3 7.5A2.5 2.5 0 0 1 5.5 5H10l2 2.5h6.5A2.5 2.5 0 0 1 21 10v7.5a2.5 2.5 0 0 1-2.5 2.5h-13A2.5 2.5 0 0 1 3 17.5z'/><path d='M8 15.5h8'/></symbol>
+  <symbol id="mat-i-shared-drive" viewBox="0 0 24 24"><rect x='3' y='6' width='18' height='13' rx='2.5'/><path d='M3 10h18'/><circle cx='9.5' cy='14.5' r='1.6'/><circle cx='14.5' cy='14.5' r='1.6'/></symbol>
+  <symbol id="mat-i-folder-plus" viewBox="0 0 24 24"><path d='M3 7.5A2.5 2.5 0 0 1 5.5 5H10l2 2.5h6.5A2.5 2.5 0 0 1 21 10v7.5a2.5 2.5 0 0 1-2.5 2.5h-13A2.5 2.5 0 0 1 3 17.5z'/><path d='M12 11v6M9 14h6'/></symbol>
+  <symbol id="mat-i-folder-upload" viewBox="0 0 24 24"><path d='M3 7.5A2.5 2.5 0 0 1 5.5 5H10l2 2.5h6.5A2.5 2.5 0 0 1 21 10v7.5a2.5 2.5 0 0 1-2.5 2.5h-13A2.5 2.5 0 0 1 3 17.5z'/><path d='M12 17v-6M9.5 13.5 12 11l2.5 2.5'/></symbol>
+  <symbol id="mat-i-folder-move" viewBox="0 0 24 24"><path d='M3 7.5A2.5 2.5 0 0 1 5.5 5H10l2 2.5h6.5A2.5 2.5 0 0 1 21 10v7.5a2.5 2.5 0 0 1-2.5 2.5h-13A2.5 2.5 0 0 1 3 17.5z'/><path d='M8 14h7.5M13 11.5l2.5 2.5-2.5 2.5'/></symbol>
+  <symbol id="mat-i-file-doc" viewBox="0 0 24 24"><path d='M14 2.5H6.5A1.5 1.5 0 0 0 5 4v16a1.5 1.5 0 0 0 1.5 1.5h11A1.5 1.5 0 0 0 19 20V7.5z'/><path d='M14 2.5v5h5'/><path d='M8.5 12h7M8.5 15h7M8.5 18h4.5'/></symbol>
+  <symbol id="mat-i-file-sheet" viewBox="0 0 24 24"><path d='M14 2.5H6.5A1.5 1.5 0 0 0 5 4v16a1.5 1.5 0 0 0 1.5 1.5h11A1.5 1.5 0 0 0 19 20V7.5z'/><path d='M14 2.5v5h5'/><path d='M8 12h8v6H8zM8 15h8M12 12v6'/></symbol>
+  <symbol id="mat-i-file-slides" viewBox="0 0 24 24"><path d='M14 2.5H6.5A1.5 1.5 0 0 0 5 4v16a1.5 1.5 0 0 0 1.5 1.5h11A1.5 1.5 0 0 0 19 20V7.5z'/><path d='M14 2.5v5h5'/><rect x='8' y='11.5' width='8' height='5.5' rx='1'/></symbol>
+  <symbol id="mat-i-file-pdf" viewBox="0 0 24 24"><path d='M14 2.5H6.5A1.5 1.5 0 0 0 5 4v16a1.5 1.5 0 0 0 1.5 1.5h11A1.5 1.5 0 0 0 19 20V7.5z'/><path d='M14 2.5v5h5'/><path d='M8 17.5v-5h1.8a1.5 1.5 0 0 1 0 3H8M13 17.5v-5h1a2.5 2.5 0 0 1 0 5z'/></symbol>
+  <symbol id="mat-i-file-video" viewBox="0 0 24 24"><path d='M14 2.5H6.5A1.5 1.5 0 0 0 5 4v16a1.5 1.5 0 0 0 1.5 1.5h11A1.5 1.5 0 0 0 19 20V7.5z'/><path d='M14 2.5v5h5'/><path d='m10 11.5 5 3-5 3z'/></symbol>
+  <symbol id="mat-i-file-audio" viewBox="0 0 24 24"><path d='M14 2.5H6.5A1.5 1.5 0 0 0 5 4v16a1.5 1.5 0 0 0 1.5 1.5h11A1.5 1.5 0 0 0 19 20V7.5z'/><path d='M14 2.5v5h5'/><circle cx='10' cy='17' r='1.8'/><path d='M11.8 17v-6l3.2-.8'/></symbol>
+  <symbol id="mat-i-kind-docs" viewBox="0 0 24 24"><rect x='3.5' y='3.5' width='17' height='17' rx='3.5'/><path d='M8 9h8M8 12h8M8 15h5'/></symbol>
+  <symbol id="mat-i-kind-sheets" viewBox="0 0 24 24"><rect x='3.5' y='3.5' width='17' height='17' rx='3.5'/><path d='M7.5 10h9M7.5 14h9M10.5 7v10M13.5 7v10'/></symbol>
+  <symbol id="mat-i-kind-slides" viewBox="0 0 24 24"><rect x='3.5' y='3.5' width='17' height='17' rx='3.5'/><rect x='7' y='8' width='10' height='6.5' rx='1'/><path d='M12 14.5V17'/></symbol>
+  <symbol id="mat-i-kind-base" viewBox="0 0 24 24"><rect x='3.5' y='3.5' width='17' height='17' rx='3.5'/><ellipse cx='12' cy='8.8' rx='4' ry='1.6'/><path d='M8 8.8v6.4c0 .9 1.8 1.6 4 1.6s4-.7 4-1.6V8.8M8 12c0 .9 1.8 1.6 4 1.6s4-.7 4-1.6'/></symbol>
+  <symbol id="mat-i-star-filled" viewBox="0 0 24 24"><path fill='currentColor' d='m12 2.8 2.9 5.9 6.5.9-4.7 4.6 1.1 6.4L12 17.6l-5.8 3 1.1-6.4-4.7-4.6 6.5-.9z'/></symbol>
   <symbol id="mat-i-history" viewBox="0 0 24 24"><path d='M3 12a9 9 0 1 0 3-6.7L3 8'/><path d='M3 3v5h5'/><path d='M12 7v5l3 2'/></symbol>
   <symbol id="mat-i-version" viewBox="0 0 24 24"><circle cx='6' cy='6' r='2.5'/><circle cx='6' cy='18' r='2.5'/><circle cx='18' cy='9' r='2.5'/><path d='M6 8.5v7M18 11.5c0 3-3 4-6.5 4.5L8.4 17'/></symbol>
-  <symbol id="mat-i-star-filled" viewBox="0 0 24 24"><path fill='currentColor' d='m12 2.8 2.9 5.9 6.5.9-4.7 4.6 1.1 6.4L12 17.6l-5.8 3 1.1-6.4-4.7-4.6 6.5-.9z'/></symbol>
-  <symbol id="mat-i-print" viewBox="0 0 24 24"><path d='M6 9V3h12v6'/><rect x='3' y='9' width='18' height='8' rx='1.5'/><path d='M6 14h12v7H6z'/></symbol>
-  <symbol id="mat-i-file-plus" viewBox="0 0 24 24"><path d='M14 2.5H6.5A1.5 1.5 0 0 0 5 4v16a1.5 1.5 0 0 0 1.5 1.5h11A1.5 1.5 0 0 0 19 20V7.5z'/><path d='M14 2.5v5h5M12 11v6M9 14h6'/></symbol>
-  <symbol id="mat-i-fullscreen" viewBox="0 0 24 24"><path d='M3 8V3h5M16 3h5v5M21 16v5h-5M8 21H3v-5'/></symbol>
-  <symbol id="mat-i-ribbon-collapse" viewBox="0 0 24 24"><path d='m6 15 6-6 6 6'/></symbol>
-  <symbol id="mat-i-ribbon-expand" viewBox="0 0 24 24"><path d='m6 9 6 6 6-6'/></symbol>
-  <symbol id="mat-i-comment" viewBox="0 0 24 24"><path d='M20 15a2 2 0 0 1-2 2H8l-4 4V5a2 2 0 0 1 2-2h12a2 2 0 0 1 2 2z'/></symbol>
-  <symbol id="mat-i-text" viewBox="0 0 24 24"><path d='M5 6V4h14v2M12 4v16M9 20h6'/></symbol>
+  <symbol id="mat-i-share" viewBox="0 0 24 24"><circle cx='18' cy='5' r='3'/><circle cx='6' cy='12' r='3'/><circle cx='18' cy='19' r='3'/><path d='m8.6 13.5 6.8 4M15.4 6.5l-6.8 4'/></symbol>
+  <symbol id="mat-i-cloud-off" viewBox="0 0 24 24"><path d='m2 2 20 20'/><path d='M5.8 5.8A7 7 0 0 0 9 19h8.5a4.5 4.5 0 0 0 1.4-.2M21.3 15.6A4.5 4.5 0 0 0 17.5 10h-1.3A7 7 0 0 0 9.6 5.1'/></symbol>
   <symbol id="mat-i-grip" viewBox="0 0 24 24"><circle cx='9' cy='6' r='1'/><circle cx='15' cy='6' r='1'/><circle cx='9' cy='12' r='1'/><circle cx='15' cy='12' r='1'/><circle cx='9' cy='18' r='1'/><circle cx='15' cy='18' r='1'/></symbol>
+  <symbol id="mat-i-text" viewBox="0 0 24 24"><path d='M5 6V4h14v2M12 4v16M9 20h6'/></symbol>
+  <symbol id="mat-i-print" viewBox="0 0 24 24"><path d='M6 9V3h12v6'/><rect x='3' y='9' width='18' height='8' rx='1.5'/><path d='M6 14h12v7H6z'/></symbol>
 </svg>

@@ -48,7 +48,7 @@ public static class OfficeService
     /// <summary>The kinds MatOffice edits, while the integration is on (for the menus of everybody); empty otherwise.</summary>
     public static async Task<IReadOnlyList<OfficeKind>> ActiveKindsAsync(AppDbContext db, CancellationToken ct = default)
     {
-        var s = await db.SystemSettings.AsNoTracking().FirstOrDefaultAsync(ct);
+        var s = await db.SystemSettings.AsNoTracking().FirstOrDefaultAsync(x => x.Id == 1, ct);
         return s is { OfficeEnabled: true, OfficeUrl: not null, OfficeKeyProtected: not null } ? ParseKinds(s.OfficeFormats) : [];
     }
 
@@ -286,18 +286,7 @@ public static class OfficeService
 
     // ---- helpers ----------------------------------------------------------------------------------------------------------------
 
-    private static async Task<SystemSetting> LoadAsync(AppDbContext db, CancellationToken ct)
-    {
-        var s = await db.SystemSettings.FirstOrDefaultAsync(ct);
-        if (s is null)
-        {
-            s = new SystemSetting();
-            db.SystemSettings.Add(s);
-            await db.SaveChangesAsync(ct);
-        }
-
-        return s;
-    }
+    private static Task<SystemSetting> LoadAsync(AppDbContext db, CancellationToken ct) => SettingsStore.LoadAsync(db, ct);
 
     private static OfficeSettings Settings(SystemSetting s)
         => new(s.OfficeEnabled, s.OfficeUrl, s.OfficeInternalUrl, s.OfficeKeyProtected is not null, s.DriveUrlForOffice, ParseKinds(s.OfficeFormats), s.OfficeCheckedDate);

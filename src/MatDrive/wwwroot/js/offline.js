@@ -1,7 +1,7 @@
 /* MatDrive without a network – small on purpose.
    - A page of the app shows "Offline" in the top bar while the device has no network (a click tries again).
    - The offline page (offline.html, shown by the service worker when a page cannot be loaded) tries again by itself as soon as the network is back, and by a button.
-   - The editor works offline by itself (session.js: the last copy of the document from the service worker, and the changes wait on this device until the network is back). */
+   - The pages of the drive come from the service worker while offline (the last copy of a folder). */
 (function () {
   'use strict';
 
@@ -33,7 +33,7 @@
     root.lang = stored || ((navigator.language || 'en').slice(0, 2) === 'de' ? 'de' : lang || 'en');
     var retry = document.getElementById('md-retry');
     var status = document.getElementById('md-retry-status');
-    var go = function () { location.assign(document.referrer && document.referrer.indexOf(location.origin) === 0 ? document.referrer : '/home'); };
+    var go = function () { location.assign(document.referrer && document.referrer.indexOf(location.origin) === 0 ? document.referrer : '/drive'); };
     retry.addEventListener('click', function () {
       status.hidden = false;
       fetch('/health', { cache: 'no-store' }).then(function (r) { if (r.ok) { go(); } else { status.hidden = false; } }).catch(function () { status.hidden = false; });

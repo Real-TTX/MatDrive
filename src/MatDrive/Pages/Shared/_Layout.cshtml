@@ -38,6 +38,7 @@
     <script src="~/matui/matui.boot.js" asp-append-version="true"></script>
     <link rel="stylesheet" href="~/matui/matui.css" asp-append-version="true" />
     <link rel="stylesheet" href="~/css/app.css" asp-append-version="true" />
+    @await RenderSectionAsync("Head", required: false)
 </head>
 <body>
     <a class="mat-skip" href="#main">@L["Shell.SkipToContent"]</a>

@@ -351,6 +351,13 @@ public sealed partial class WebDavHandler
                 return;
             }
 
+            if (existing.Node is { } replaced && source.Chain.Contains(replaced.Id))
+            {
+                // the destination is a folder above the source: replacing it would put the source into the trash with it
+                Status(StatusCodes.Status403Forbidden);
+                return;
+            }
+
             if (!existing.CanEdit)
             {
                 Status(StatusCodes.Status403Forbidden);

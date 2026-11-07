@@ -24,7 +24,8 @@ public enum DavSignIn
 }
 
 /// <summary>
-/// HTTP Basic sign-in for WebDAV: the address and an app password (or the password of a local account), checked by <see cref="AppPasswords.SignInAsync"/>.
+/// HTTP Basic sign-in for WebDAV: the address and an app password (or the password of a local account), checked by
+/// <see cref="AppPasswords.SignInAsync(AppDbContext, PasswordService, string, string, CancellationToken)"/>.
 /// Clients send the credentials with every request, so a successful sign-in is remembered for <see cref="CacheTime"/> (keyed by a hash of the credentials,
 /// never the password itself); failed attempts are limited per IP address (<see cref="FailuresPerMinute"/>).
 /// </summary>

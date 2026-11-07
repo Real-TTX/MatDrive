@@ -100,7 +100,7 @@
                     {
                         var cat = n.Category;
                         <tr data-node="@n.Id" data-kind="@(n.IsFolder ? "folder" : "file")" data-name="@n.Name" data-category="@cat" data-preview="@(n.IsFolder ? "none" : FileTypes.PreviewOf(n.Name, n.Size))"
-                            data-office="@(Model.OpensInOffice(n) ? "1" : null)" data-starred="@(n.IsStarred ? "1" : null)" data-text="@(n.IsFolder ? null : FileTypes.IsEditableText(n.Name, n.Size) ? "1" : null)" data-drop-folder="@(n.IsFolder && !trash ? n.Id : null)" draggable="@(trash ? "false" : "true")">
+                            data-office="@(Model.OpensInOffice(n) ? "1" : null)" data-office-default="@(Model.OpensInOfficeByDefault(n) ? "1" : null)" data-starred="@(n.IsStarred ? "1" : null)" data-text="@(n.IsFolder ? null : FileTypes.IsEditableText(n.Name, n.Size) ? "1" : null)" data-drop-folder="@(n.IsFolder && !trash ? n.Id : null)" draggable="@(trash ? "false" : "true")">
                             <td class="mat-table__check"><input type="checkbox" class="mat-check__input" data-select-row value="@n.Id" aria-label="@L["Drive.SelectNamed", n.Name]" /></td>
                             <td data-label="@L["Common.Name"]" class="mat-table__primary">
                                 <a class="md-name" href="@(trash ? $"/drive/item/{n.Id}" : IndexModel.HrefOf(n))" data-open>
@@ -145,7 +145,7 @@
                     var cat = n.Category;
                     var thumb = !n.IsFolder && cat == "image" && n.Size <= 8 * 1024 * 1024 && FileTypes.PreviewOf(n.Name, n.Size) == "image";
                     <div class="mat-tile md-tile" data-select-item data-node="@n.Id" data-kind="@(n.IsFolder ? "folder" : "file")" data-name="@n.Name" data-category="@cat"
-                         data-preview="@(n.IsFolder ? "none" : FileTypes.PreviewOf(n.Name, n.Size))" data-office="@(Model.OpensInOffice(n) ? "1" : null)" data-starred="@(n.IsStarred ? "1" : null)"
+                         data-preview="@(n.IsFolder ? "none" : FileTypes.PreviewOf(n.Name, n.Size))" data-office="@(Model.OpensInOffice(n) ? "1" : null)" data-office-default="@(Model.OpensInOfficeByDefault(n) ? "1" : null)" data-starred="@(n.IsStarred ? "1" : null)"
                          data-text="@(n.IsFolder ? null : FileTypes.IsEditableText(n.Name, n.Size) ? "1" : null)" data-drop-folder="@(n.IsFolder && !trash ? n.Id : null)" draggable="@(trash ? "false" : "true")">
                         <a class="md-tile__link" href="@(trash ? $"/drive/item/{n.Id}" : IndexModel.HrefOf(n))" data-open>
                             <span class="mat-tile__media md-tile__media md-ficon--@cat">

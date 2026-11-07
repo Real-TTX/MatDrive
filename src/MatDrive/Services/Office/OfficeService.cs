@@ -52,6 +52,16 @@ public static class OfficeService
         return s is { OfficeEnabled: true, OfficeUrl: not null, OfficeKeyProtected: not null } ? ParseKinds(s.OfficeFormats) : [];
     }
 
+    /// <summary>
+    /// Whether a click opens a file in MatOffice: the own formats of MatOffice and the ones it makes for new files (Word, Excel, PowerPoint, a database).
+    /// Other files it can read (text, Markdown, HTML, CSV) open in the preview first and offer "Open with MatOffice", like the cloud drives people know.
+    /// </summary>
+    public static bool OpensByDefault(IReadOnlyList<OfficeKind> kinds, string fileName)
+    {
+        var ext = Path.GetExtension(fileName).ToLowerInvariant();
+        return FormatOf(kinds, fileName) is not null && kinds.Any(k => ext == k.Native || ext == k.NewFormat);
+    }
+
     /// <summary>The format of a file name MatOffice can open (and whether it can write it), or null.</summary>
     public static (OfficeKind Kind, OfficeFormat Format)? FormatOf(IReadOnlyList<OfficeKind> kinds, string fileName)
     {

@@ -171,4 +171,7 @@ public sealed class IndexModel(AppDbContext db) : AppPageModel
 
     /// <summary>Whether MatOffice opens a file (the button "Open with MatOffice").</summary>
     public bool OpensInOffice(NodeRow n) => !n.IsFolder && OfficeService.FormatOf(OfficeKinds, n.Name) is not null;
+
+    /// <summary>Whether a click opens the file in MatOffice (office formats) instead of the preview (text, CSV … that MatOffice can also open).</summary>
+    public bool OpensInOfficeByDefault(NodeRow n) => !n.IsFolder && OfficeService.OpensByDefault(OfficeKinds, n.Name);
 }

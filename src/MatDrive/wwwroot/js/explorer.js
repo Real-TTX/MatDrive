@@ -69,7 +69,7 @@ function rowOf(node) { return node.closest('[data-node]'); }
 function itemOf(row) {
   return {
     id: Number(row.dataset.node), kind: row.dataset.kind, name: row.dataset.name, category: row.dataset.category, preview: row.dataset.preview,
-    office: row.dataset.office === '1', starred: row.dataset.starred === '1', text: row.dataset.text === '1', row,
+    office: row.dataset.office === '1', officeDefault: row.dataset.officeDefault === '1', starred: row.dataset.starred === '1', text: row.dataset.text === '1', row,
   };
 }
 
@@ -343,9 +343,9 @@ function wireRows() {
   });
 }
 
-/** Opens a file the way it is best shown: MatOffice for office files, else the preview. */
+/** Opens a file the way it is best shown: MatOffice for office files, else the preview (text, CSV … offer "Open with MatOffice" there). */
 function openFile(item) {
-  if (item.office) { window.open('/office/open/' + item.id, '_blank', 'noopener'); return; }
+  if (item.officeDefault) { window.open('/office/open/' + item.id, '_blank', 'noopener'); return; }
   preview(item);
 }
 

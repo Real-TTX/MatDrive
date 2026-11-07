@@ -248,6 +248,7 @@ public static class NodeService
             return Outcome<Node>.Fail(Text.T("Files.NameInvalid"));
         }
 
+        using var nameLock = await LockNameAsync(target.Value.DriveId, parentId, clean, ct);
         if (await ExistsAsync(db, target.Value.DriveId, parentId, clean, null, ct))
         {
             return Outcome<Node>.Fail(Text.T("Files.NameTaken", clean));
@@ -724,6 +725,19 @@ public static class NodeService
         return db.Nodes.AnyAsync(n => n.DriveId == driveId && n.ParentId == parentId && !n.InTrash && n.Name.ToLower() == lower && n.Id != except, ct);
     }
 
+    // Two requests that make the same name in the same folder at the same moment (the parallel workers of a folder upload, two people) would both
+    // find it free and both insert it: the look-up of a name and the insert of its node run one at a time. MatDrive runs as one instance;
+    // a stripe of 64 locks needs no clean-up (two names may share a lock, which only makes one of them wait a moment).
+    private static readonly SemaphoreSlim[] NameLocks = Enumerable.Range(0, 64).Select(_ => new SemaphoreSlim(1, 1)).ToArray();
+
+    /// <summary>Holds a name in a folder until the result is disposed: wrap the look-up of the name AND the insert of the node in it.</summary>
+    internal static async Task<NameLock> LockNameAsync(long driveId, long? parentId, string name, CancellationToken ct = default)
+    {
+        var gate = NameLocks[(int)((uint)HashCode.Combine(driveId, parentId ?? 0, name.ToLowerInvariant()) % (uint)NameLocks.Length)];
+        await gate.WaitAsync(ct);
+        return new NameLock(gate);
+    }
+
     /// <summary>The node of a name in a folder (not in the trash), or null.</summary>
     public static Task<Node?> FindByNameAsync(AppDbContext db, long driveId, long? parentId, string name, bool track = false, CancellationToken ct = default)
     {
@@ -778,4 +792,10 @@ public static class NodeService
         var ids = nodes.Select(n => n.Id);
         return await db.NodeVersions.Where(v => ids.Contains(v.NodeId)).SumAsync(v => v.Size, ct);
     }
+}
+
+/// <summary>A name held in a folder (see <see cref="NodeService.LockNameAsync"/>); disposing it lets the next request in.</summary>
+internal readonly struct NameLock(SemaphoreSlim gate) : IDisposable
+{
+    public void Dispose() => gate.Release();
 }

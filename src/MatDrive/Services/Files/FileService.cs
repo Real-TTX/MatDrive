@@ -96,6 +96,7 @@ public static class FileService
             return Outcome<Node>.Fail(Text.T("Files.QuotaFull"));
         }
 
+        using var nameLock = await NodeService.LockNameAsync(drive, folder?.Id, name, ct);
         var existing = await NodeService.FindByNameAsync(db, drive, folder?.Id, name, track: true, ct);
         if (existing is not null && existing.Kind == NodeKind.File && mode == UploadMode.NewVersion)
         {
@@ -113,9 +114,10 @@ public static class FileService
         return Outcome<Node>.Success(node);
     }
 
-    /// <summary>A folder of a name in a folder: the one that is there, or a new one.</summary>
+    /// <summary>A folder of a name in a folder: the one that is there, or a new one (also when parallel uploads of one folder ask for it at the same moment).</summary>
     internal static async Task<Node> EnsureFolderAsync(AppDbContext db, long? userId, long driveId, Node? parent, string name, CancellationToken ct)
     {
+        using var nameLock = await NodeService.LockNameAsync(driveId, parent?.Id, name, ct);
         var existing = await NodeService.FindByNameAsync(db, driveId, parent?.Id, name, ct: ct);
         if (existing is { Kind: NodeKind.Folder })
         {
@@ -251,6 +253,7 @@ public static class FileService
             return (WriteStatus.QuotaFull, null, null);
         }
 
+        using var nameLock = await NodeService.LockNameAsync(drive, folder?.Id, name, ct);
         if (await NodeService.ExistsAsync(db, drive, folder?.Id, name, null, ct))
         {
             // somebody else made a file of that name while the bytes arrived
@@ -542,8 +545,14 @@ public static class FileService
                 return Outcome<Node>.Fail(Text.T("Files.QuotaFull"));
             }
 
-            var folderName = await NodeService.FreeNameAsync(db, target.Value.DriveId, target.Value.Parent?.Id, Path.GetFileNameWithoutExtension(file.Name), null, ct);
-            var folder = await NodeService.AddNodeAsync(db, actor.UserId, target.Value.DriveId, target.Value.Parent, NodeKind.Folder, folderName, ct);
+            var baseName = Path.GetFileNameWithoutExtension(file.Name);
+            Node folder;
+            using (await NodeService.LockNameAsync(target.Value.DriveId, target.Value.Parent?.Id, baseName, ct))
+            {
+                var folderName = await NodeService.FreeNameAsync(db, target.Value.DriveId, target.Value.Parent?.Id, baseName, null, ct);
+                folder = await NodeService.AddNodeAsync(db, actor.UserId, target.Value.DriveId, target.Value.Parent, NodeKind.Folder, folderName, ct);
+            }
+
             foreach (var entry in zip.Entries)
             {
                 var path = entry.FullName.Replace('\\', '/');

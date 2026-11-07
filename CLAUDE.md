@@ -20,7 +20,8 @@ English and German (catalog in `Resources/Texts/*.json`). Accent: violet `#8e24a
 
 - **Build:** `dotnet build MatDrive.slnx` (SDK 10, `global.json`). Expected: 0 warnings, 0 errors.
 - **Tests:** `dotnet test`. Database tests run when `MATDRIVE_TEST_DB` is set (an administrator connection string, e.g.
-  `Host=localhost;Port=4812;Username=matdrive;Password=matdrive;Database=postgres` while the local stack runs); each test creates, migrates and drops a database of its own.
+  `Host=localhost;Port=4812;Username=matdrive;Password=matdrive;Database=postgres` while the local stack runs); each test creates, migrates and drops a database of its own
+  (`WebDavServerTests`: the whole app in memory with `WebApplicationFactory`, one database for the class, every test with its own people).
   `TextCatalogTests` checks every text key of the server code and of the scripts (`t('Drive.X')` → `Js.Drive.X`) in English and German.
 - **Run / test the app: always rebuild the container** (`./scripts/redeploy.ps1`, `-Clean` for empty volumes). CSS, JS and cshtml are baked into the image.
 - **Test account (always):** `admin@example.com` / `Start12345` – the first account of a fresh stack (it becomes the administrator).
@@ -49,7 +50,9 @@ src/MatDrive
   Services/Office/           OfficeService: settings (URL, internal URL, API key encrypted, MatDrive URL for MatOffice), check (/api/v1/host/formats), open (session at
                              MatOffice, a time-limited token for /api/v1/office/files/{id}/content), new documents (/api/v1/host/new)
   Services/Locations/        storage locations like MatFile (LocationAccess; providers and browsing)
-  Services/WebDav/           the WebDAV server (/dav/)
+  Services/WebDav/           the WebDAV server at /dav/ (RFC 4918, class 1 and 2): WebDavEndpoints (AddWebDav, MapWebDav), WebDavHandler (.Read: GET/HEAD, PROPFIND,
+                             PROPPATCH; .Write: PUT, DELETE, MKCOL, COPY/MOVE, LOCK/UNLOCK), DavStore (the tree over the business layer), DavAuthenticator (Basic),
+                             DavLockManager (locks in memory), DavPath (paths, hrefs, Destination), DavIfHeader, DavXml (bodies, DavProperties, DavMultiStatus)
   Services/Accounts/         Profiles, UserAdmin, AppPasswords (WebDAV passwords: shown once, hashed)
   Services/Mail/MailService  MatSMTP through MailKit, queued in the background; off unless MATSMTP_HOST is set
   Services/Auth/             CurrentUser, PasswordService, SessionService (sessions in the DB), AccountService, ExternalSignInService (MatIdentity), AccountDataService (GDPR export/erase)
@@ -74,6 +77,13 @@ tests/MatDrive.Tests         unit + database tests
 **Security**: every query of a node goes through `DriveAccess`; something a person may not see answers 404. Every change of `/live` needs the antiforgery header
 `RequestVerificationToken`. File content is served with its own CSP (sandbox) and inline only for types that cannot run script (never HTML or SVG). Secrets
 (passwords of locations, the key of MatOffice) are encrypted with DataProtection (keys in the volume); app passwords and API keys only as hashes.
+
+**WebDAV** (`/dav/`): sign-in with HTTP Basic, the address and an app password (or the password of a local account), never the cookie; a sign-in is remembered for 2 minutes,
+10 failures a minute per IP answer 429. The tree has stable English names: `My Drive/`, `Shared drives/<drive>/`, `Shared with me/<item>/` (clashing names get ` (2)`), no
+trash. Everything goes through the business layer (`DriveAccess` decides: a viewer reads, a write answers 403); its activity is marked `webdav` (`ActivityLog.From`), DELETE
+and `Overwrite: T` go into the trash, saves of one person within 2 minutes are one version. Locks live in memory (`DavLockManager`: at most an hour, 500 a person, gone with a
+restart; a LOCK on a free name makes an empty file). The quota answers 507 (before the bytes when the length is announced), the upload limit 413. PROPFIND: depth 0 or 1, one
+query for the children; PROPPATCH is answered, not stored. The Windows Explorer sends Basic only over HTTPS (or with `BasicAuthLevel=2`); `git push` over http is a client for tests.
 
 **UI (MatDesign rules)**: CRUD = list page (toolbar above, table/gallery, pager under it, actions left below) + separate edit page (Save, Back, space, Delete);
 an item and a shared drive have **tabs**. The explorer is the special UI of the app (like a file manager), built on the toolkit. Icons via `Ui.Icon` (toolkit sprite + `wwwroot/img/app-icons.svg`).

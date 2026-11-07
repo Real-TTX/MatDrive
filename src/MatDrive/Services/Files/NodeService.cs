@@ -466,9 +466,48 @@ public static class NodeService
         return Outcome<int>.Success(copied);
     }
 
-    private static async Task CopyNodeAsync(AppDbContext db, BlobStore store, long? userId, Node source, long toDrive, Node? toFolder, bool firstLevel, CancellationToken ct)
+    /// <summary>
+    /// Copies one item (a folder with everything in it) into a folder or to the top of a drive under a name the caller chose (WebDAV COPY); answers the copy.
+    /// The name must be free there (it is not numbered).
+    /// </summary>
+    public static async Task<Outcome<Node>> CopyToAsync(AppDbContext db, BlobStore store, Actor actor, long id, long driveId, long? targetId, string name, CancellationToken ct = default)
     {
-        var name = await FreeNameAsync(db, toDrive, toFolder?.Id, firstLevel && toFolder?.Id == source.ParentId && toDrive == source.DriveId ? CopyName(source.Name, source.Kind) : source.Name, null, ct);
+        var target = await TargetAsync(db, actor, driveId, targetId, ct);
+        var access = target is null ? null : await DriveAccess.FindAsync(db, actor, id, ct: ct);
+        if (target is null || access is null)
+        {
+            return Outcome<Node>.Denied();
+        }
+
+        var clean = CleanName(name);
+        if (clean is null)
+        {
+            return Outcome<Node>.Fail(Text.T("Files.NameInvalid"));
+        }
+
+        var (toDrive, toFolder) = target.Value;
+        if (toFolder is not null && toFolder.Path.StartsWith(access.Node.Path, StringComparison.Ordinal))
+        {
+            return Outcome<Node>.Fail(Text.T("Files.CopyIntoItself", access.Node.Name));
+        }
+
+        if (await ExistsAsync(db, toDrive, toFolder?.Id, clean, null, ct))
+        {
+            return Outcome<Node>.Fail(Text.T("Files.NameTaken", clean));
+        }
+
+        var bytes = await SubtreeBytesAsync(db, access.Node.Path, ct, currentOnly: true);
+        if (!await FileService.HasRoomAsync(db, toDrive, bytes, ct))
+        {
+            return Outcome<Node>.Fail(Text.T("Files.QuotaFull"));
+        }
+
+        return Outcome<Node>.Success(await CopyNodeAsync(db, store, actor.UserId, access.Node, toDrive, toFolder, firstLevel: true, ct, clean));
+    }
+
+    private static async Task<Node> CopyNodeAsync(AppDbContext db, BlobStore store, long? userId, Node source, long toDrive, Node? toFolder, bool firstLevel, CancellationToken ct, string? name = null)
+    {
+        name ??= await FreeNameAsync(db, toDrive, toFolder?.Id, firstLevel && toFolder?.Id == source.ParentId && toDrive == source.DriveId ? CopyName(source.Name, source.Kind) : source.Name, null, ct);
         var copy = await AddNodeAsync(db, userId, toDrive, toFolder, source.Kind, name, ct);
         copy.Description = source.Description;
         copy.Colour = source.Colour;
@@ -500,6 +539,8 @@ public static class NodeService
                 await CopyNodeAsync(db, store, userId, child, toDrive, copy, firstLevel: false, ct);
             }
         }
+
+        return copy;
     }
 
     // ---- trash ------------------------------------------------------------------------------------------------------------------

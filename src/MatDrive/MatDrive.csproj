@@ -26,7 +26,6 @@
   <ItemGroup>
     <InternalsVisibleTo Include="MatDrive.Tests" />
     <EmbeddedResource Include="Resources\Texts\*.json" />
-    <EmbeddedResource Include="Resources\Templates\**\*" />
   </ItemGroup>
 
 </Project>

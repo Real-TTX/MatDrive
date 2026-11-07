@@ -421,6 +421,37 @@ public sealed class WebDavServerTests(WebDavServer server) : IClassFixture<WebDa
         Assert.Equal(HttpStatusCode.Created, await StatusAsync(carol, "PUT", "/dav/Shared%20with%20me/Shared/from-carol.txt", new StringContent("hi")));
         Assert.Equal("hi", await GetTextAsync(ada, team + "Shared/from-carol.txt"));
         Assert.Equal(HttpStatusCode.NotFound, await StatusAsync(carol, "GET", "/dav/Shared%20with%20me/plan.txt"));
+
+        // she renames it where it is: it stays in the drive of Ada
+        Assert.Equal(HttpStatusCode.Created, await MoveAsync(carol, "/dav/Shared%20with%20me/Shared/", "/dav/Shared%20with%20me/Renamed/"));
+        Assert.Equal("hi", await GetTextAsync(ada, team + "Renamed/from-carol.txt"));
+        Assert.Equal(HttpStatusCode.Forbidden, await MoveAsync(carol, "/dav/Shared%20with%20me/Renamed/", "/dav/Elsewhere/"));
+    }
+
+    [DbFact]
+    public async Task An_item_moves_between_drives_where_the_person_may_write_in_both()
+    {
+        var ada = await PersonAsync("Ada");
+        var bob = await PersonAsync("Bob");
+        var (driveId, team) = await SharedDriveAsync(ada, "Projects", (bob, AccessRole.Viewer));
+        await PutTextAsync(ada, "/dav/My%20Drive/plan.txt", "0123456789");
+
+        // the space goes with it
+        Assert.Equal(HttpStatusCode.Created, await MoveAsync(ada, "/dav/My%20Drive/plan.txt", team + "plan.txt"));
+        Assert.Equal(HttpStatusCode.NotFound, await StatusAsync(ada, "GET", "/dav/My%20Drive/plan.txt"));
+        Assert.Equal("0123456789", await GetTextAsync(bob, team + "plan.txt"));
+        await using (var db = server.NewDb())
+        {
+            Assert.Equal(10, await db.Drives.Where(d => d.Id == driveId).Select(d => d.UsedBytes).SingleAsync());
+            Assert.Equal(0, await db.Drives.Where(d => d.OwnerId == ada.Id).Select(d => d.UsedBytes).SingleAsync());
+        }
+
+        // a viewer of the shared drive copies out of it, but neither into it nor away from it
+        Assert.Equal(HttpStatusCode.Created, await CopyAsync(bob, team + "plan.txt", "/dav/My%20Drive/plan.txt"));
+        Assert.Equal("0123456789", await GetTextAsync(bob, "/dav/My%20Drive/plan.txt"));
+        Assert.Equal(HttpStatusCode.Forbidden, await CopyAsync(bob, "/dav/My%20Drive/plan.txt", team + "mine.txt"));
+        Assert.Equal(HttpStatusCode.Forbidden, await MoveAsync(bob, team + "plan.txt", "/dav/My%20Drive/taken.txt"));
+        Assert.Equal("0123456789", await GetTextAsync(ada, team + "plan.txt"));
     }
 
     [DbFact]

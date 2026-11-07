@@ -71,7 +71,7 @@ src/MatDrive
                              Edit = the text editor), Drives/ (shared drives), Public/ (links /l/{token}), Account/ (+ AppPasswords), Admin/ (Users, Locations: list, Edit =
                              General, Access, Integrations, Activity, System), Locations/ (Index = a location like the explorer: /locations/{id}/{folder…}; Edit = the
                              text editor /locations/edit/{id}?path=), About
-  wwwroot/js/                util.js (t, el, icon, request, dialog …), drive.js (the menu "New" on every page), explorer.js (uploads, drag & drop, menus, preview, picker),
+  wwwroot/js/                util.js (t, el, icon, request, dialog, busy …), drive.js (the menu "New" on every page), explorer.js (uploads, drag & drop, menus, preview, picker: drives and storage locations),
                              locations.js (the same for a storage location: uploads, menus, pickers, properties, search, the text editor)
   wwwroot/css/app.css        accent + the styles of the explorer (prefix md-); locations.css: what the storage locations add (md-loc-, md-perm)
 tests/MatDrive.Tests         unit + database tests

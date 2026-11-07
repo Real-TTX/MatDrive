@@ -2,8 +2,8 @@
   "id": "/",
   "name": "MatDrive",
   "short_name": "MatDrive",
-  "description": "Office in the browser: documents, spreadsheets, presentations and databases. Office im Browser: Texte, Tabellen, Präsentationen und Datenbanken.",
-  "start_url": "/home",
+  "description": "Your files in the browser: drives, sharing, versions, WebDAV. Deine Dateien im Browser: Ablagen, Teilen, Versionen, WebDAV.",
+  "start_url": "/drive",
   "scope": "/",
   "display": "standalone",
   "display_override": [
@@ -12,10 +12,10 @@
   ],
   "orientation": "any",
   "background_color": "#f5f4f1",
-  "theme_color": "#d83b01",
+  "theme_color": "#8e24aa",
   "categories": [
     "productivity",
-    "business"
+    "utilities"
   ],
   "icons": [
     {
@@ -42,46 +42,46 @@
   ],
   "shortcuts": [
     {
-      "name": "Docs / Texte",
-      "short_name": "Docs",
-      "url": "/docs",
+      "name": "My Drive / Meine Ablage",
+      "short_name": "Drive",
+      "url": "/drive",
       "icons": [
         {
-          "src": "/img/logo/docs-favicon.svg",
-          "sizes": "any"
+          "src": "/img/icon-192.png",
+          "sizes": "192x192"
         }
       ]
     },
     {
-      "name": "Sheets / Tabellen",
-      "short_name": "Sheets",
-      "url": "/sheets",
+      "name": "Shared with me / Für mich freigegeben",
+      "short_name": "Shared",
+      "url": "/drive/shared",
       "icons": [
         {
-          "src": "/img/logo/sheets-favicon.svg",
-          "sizes": "any"
+          "src": "/img/icon-192.png",
+          "sizes": "192x192"
         }
       ]
     },
     {
-      "name": "Slides / Präsentationen",
-      "short_name": "Slides",
-      "url": "/slides",
+      "name": "Recent / Zuletzt",
+      "short_name": "Recent",
+      "url": "/drive/recent",
       "icons": [
         {
-          "src": "/img/logo/slides-favicon.svg",
-          "sizes": "any"
+          "src": "/img/icon-192.png",
+          "sizes": "192x192"
         }
       ]
     },
     {
-      "name": "Base / Datenbank",
-      "short_name": "Base",
-      "url": "/base",
+      "name": "Upload / Hochladen",
+      "short_name": "Upload",
+      "url": "/drive?new=files",
       "icons": [
         {
-          "src": "/img/logo/base-favicon.svg",
-          "sizes": "any"
+          "src": "/img/icon-192.png",
+          "sizes": "192x192"
         }
       ]
     }

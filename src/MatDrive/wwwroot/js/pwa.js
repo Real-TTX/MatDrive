@@ -1,7 +1,7 @@
 /* MatDrive as an app (PWA): the service worker, the install button and the clean-up when somebody signs out.
-   - The service worker (sw.js) keeps the shell of the app, the editors and the last documents for offline use.
+   - The service worker (sw.js) keeps the shell of the app, the last folders for offline use.
    - "Install the app": the browser offers it by an event; the button (data-pwa-install, in the user menu) is shown only when the browser can do it.
-   - Signing out clears what the service worker and the editor kept on this device (copies of documents and changes that wait belong to the person who was signed in). */
+   - Signing out clears what the service worker and the editor kept on this device (copies of folders and changes that wait belong to the person who was signed in). */
 (function () {
   'use strict';
 
@@ -32,7 +32,7 @@
     try {
       Object.keys(localStorage).filter(function (k) { return k.indexOf('md.pending.') === 0 || k.indexOf('md.hidden.') === 0; }).forEach(function (k) { localStorage.removeItem(k); });
     } catch (err) { /* private mode */ }
-    if (window.caches) { caches.delete('md-documents'); caches.delete('md-pages'); }
+    if (window.caches) { caches.delete('md-pages'); }
     if (navigator.serviceWorker && navigator.serviceWorker.controller) { navigator.serviceWorker.controller.postMessage('md-clear'); }
   });
 })();

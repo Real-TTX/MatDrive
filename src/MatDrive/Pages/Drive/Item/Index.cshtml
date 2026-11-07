@@ -1,0 +1,97 @@
+@page "/drive/item/{id:long}"
+@model MatDrive.Pages.Drive.Item.IndexModel
+@{
+    ViewData["Tab"] = "general";
+    ViewData["Width"] = "narrow";
+    ViewData["PageSub"] = Model.Node.InTrash ? L["Item.InTrash"].Value : L["Types." + Model.Category].Value;
+    var canEdit = Model.Access.CanEdit && !Model.Node.InTrash;
+}
+
+@section TopActions {
+    @if (!Model.Node.InTrash)
+    {
+        @if (Model.IsFolder)
+        {
+            <a class="mat-btn mat-btn--secondary mat-btn--icon" href="/drive/folder/@Model.Id" aria-label="@L["Drive.Open"]" data-tip="@L["Drive.Open"]">@Ui.Icon("folder-open")</a>
+        }
+        else
+        {
+            @if (Model.OpensInOffice)
+            {
+                <a class="mat-btn mat-btn--secondary mat-btn--icon" href="/office/open/@Model.Id" target="_blank" rel="noopener" aria-label="@L["Drive.OpenInOffice"]" data-tip="@L["Drive.OpenInOffice"]">@Ui.Icon("external")</a>
+            }
+            <a class="mat-btn mat-btn--secondary mat-btn--icon" href="/files/@Model.Id/content?download=true" aria-label="@L["Drive.Download"]" data-tip="@L["Drive.Download"]">@Ui.Icon("download")</a>
+        }
+    }
+}
+
+<partial name="_ItemTabs" model="Model" />
+
+@if (Model.Node.InTrash)
+{
+    <div class="mat-alert mat-alert--warn md-mb" role="status">@Ui.Icon("trash")<div>@L["Item.InTrash.Text"]</div></div>
+}
+
+<form class="mat-form" method="post" novalidate>
+    <partial name="_FormSummary" model="ViewData.ModelState" />
+    <div class="mat-card">
+        <div class="mat-card__body mat-form">
+            <md-field name="Name" label="@L["Common.Name"]" required value="@Model.Name" maxlength="255" disabled="@(!canEdit)" msg-required="@L["Common.NameRequired"]" />
+            <md-field name="Description" kind="textarea" label="@L["Item.Description"]" value="@Model.Description" maxlength="2000" rows="3" optional disabled="@(!canEdit)" />
+            @if (Model.IsFolder)
+            {
+                <md-field name="Colour" kind="colour" label="@L["Item.Colour"]" value="@Model.Colour" optional disabled="@(!canEdit)" hint="@L["Item.Colour.Hint"]" />
+            }
+        </div>
+    </div>
+    <div class="mat-card">
+        <div class="mat-card__head"><h2 class="mat-card__title">@Ui.Icon("info")@L["Item.Details"]</h2></div>
+        <div class="mat-card__body">
+            <dl class="mat-kv">
+                <dt>@L["Drive.Col.Type"]</dt><dd><span class="md-name"><span class="md-ficon md-ficon--@Model.Category">@Ui.Icon(FileTypes.IconOf(Model.Category))</span><span>@L["Types." + Model.Category]</span></span></dd>
+                <dt>@L["Item.Where"]</dt><dd><a href="@Model.FolderUrl">@(Model.Path.Count > 1 ? Model.Path[^2].Name : Model.Access.Drive.Kind == DriveKind.Shared ? Model.Access.Drive.Name : L["Drive.My"].Value)</a></dd>
+                @if (Model.IsFolder)
+                {
+                    <dt>@L["Item.Contains"]</dt><dd>@(Model.ItemsInside ?? 0)</dd>
+                }
+                else
+                {
+                    <dt>@L["Drive.Col.Size"]</dt><dd class="mat-mono">@Ui.Bytes(Model.Node.Size)</dd>
+                    <dt>@L["Item.Mime"]</dt><dd class="mat-mono">@Model.Node.MimeType</dd>
+                    <dt>@L["Item.Tab.Versions"]</dt><dd><a href="/drive/item/@Model.Id/versions">@Model.Versions</a></dd>
+                }
+                <dt>@L["Drive.Col.Owner"]</dt><dd>@Model.OwnerName</dd>
+                <dt>@L["Item.Created"]</dt><dd>@Dates.Stamp(Model.Node.CreateDate, Model.Zone)</dd>
+                <dt>@L["Drive.Col.Modified"]</dt><dd>@Dates.Stamp(Model.Node.ModifiedDate, Model.Zone)</dd>
+                <dt>@L["Item.Access"]</dt><dd><span class="mat-pill mat-pill--plain">@L["Roles." + Model.Access.Role]</span></dd>
+                <dt>@L["Item.Tab.Sharing"]</dt><dd>@L["Item.SharedCounts", Model.Shares, Model.Links]</dd>
+            </dl>
+        </div>
+    </div>
+
+    @if (Model.Node.InTrash)
+    {
+        @if (Model.Node.TrashedDate is not null && Model.Access.CanEdit)
+        {
+            <div class="mat-btn-row">
+                <button type="submit" class="mat-btn mat-btn--primary" formaction="@Url.Page("Index", "Restore", new { id = Model.Id })" formnovalidate>@Ui.Icon("history")<span>@L["Drive.Restore"]</span></button>
+                <a class="mat-btn mat-btn--secondary" href="/drive/trash">@Ui.Icon("back")<span>@L["Common.Back"]</span></a>
+                <span class="mat-btn-row__spacer"></span>
+                <button type="submit" class="mat-btn mat-btn--danger" formaction="@Url.Page("Index", "DeleteForever", new { id = Model.Id })" formnovalidate
+                        data-confirm="@L["Drive.DeleteForever.ConfirmNamed", Model.Node.Name]" data-confirm-ok="@L["Drive.DeleteForever"]">@Ui.Icon("trash")<span>@L["Drive.DeleteForever"]</span></button>
+            </div>
+        }
+        else
+        {
+            <div class="mat-btn-row"><a class="mat-btn mat-btn--secondary" href="/drive/trash">@Ui.Icon("back")<span>@L["Common.Back"]</span></a></div>
+        }
+    }
+    else if (canEdit)
+    {
+        <md-buttons save="@L["Common.Save"]" back="@Model.FolderUrl" delete-handler="Delete" delete-label="@L["Drive.MoveToTrash"]" delete-confirm="@L["Item.TrashConfirm", Model.Node.Name]" delete-ok="@L["Drive.MoveToTrash"]" />
+    }
+    else
+    {
+        <div class="mat-btn-row"><a class="mat-btn mat-btn--secondary" href="@Model.FolderUrl">@Ui.Icon("back")<span>@L["Common.Back"]</span></a></div>
+    }
+</form>

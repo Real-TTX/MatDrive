@@ -1,0 +1,54 @@
+@page "/drives"
+@model MatDrive.Pages.Drives.IndexModel
+@{
+    ViewData["Title"] = L["Drive.SharedDrives"].Value;
+    ViewData["PageSub"] = L["Drives.Sub"].Value;
+}
+
+<div class="mat-list">
+    <partial name="_Toolbar" model="Model.Toolbar" />
+
+    @if (Model.Items.Count == 0)
+    {
+        <partial name="_Empty" model="@(new EmptyStateModel("shared-drive", L[Model.Toolbar.Total == 0 ? "Drives.Empty.Title" : "Lists.NoMatch"].Value, L[Model.Toolbar.Total == 0 ? "Drives.Empty.Text" : "Lists.ChangeTools"].Value, Model.Toolbar.Total == 0, "/drives/edit", L["Drives.New"].Value, Model.Toolbar.UrlReset()))" />
+    }
+    else
+    {
+        <md-table caption="@L["Drive.SharedDrives"]">
+            <thead>
+                <tr>
+                    <th scope="col">@L["Common.Name"]</th>
+                    <th scope="col">@L["Drives.Col.Role"]</th>
+                    <th scope="col" class="mat-num mat-hide-sm">@L["Drives.Col.Members"]</th>
+                    <th scope="col" class="mat-num mat-hide-sm">@L["System.Used"]</th>
+                    <th scope="col"><span class="mat-sr-only">@L["Common.Actions"]</span></th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var d in Model.Items)
+                {
+                    <tr>
+                        <td data-label="@L["Common.Name"]" class="mat-table__primary">
+                            <a class="md-name" href="/drive/shared-drive/@d.Id"><svg class="mat-icon" data-colour="@d.Colour" aria-hidden="true" focusable="false"><use href="#mat-i-shared-drive"></use></svg><span class="md-name__text">@d.Name</span></a>
+                            @if (!string.IsNullOrEmpty(d.Description)) { <small class="md-muted md-block-line">@d.Description</small> }
+                        </td>
+                        <td data-label="@L["Drives.Col.Role"]"><span class="mat-pill @(d.Role == AccessRole.Manager ? "mat-pill--accent" : "mat-pill--plain")">@L["Roles." + d.Role]</span></td>
+                        <td data-label="@L["Drives.Col.Members"]" class="mat-num mat-mono mat-hide-sm">@d.Members</td>
+                        <td data-label="@L["System.Used"]" class="mat-num mat-mono mat-hide-sm">@Ui.Bytes(d.UsedBytes)</td>
+                        <td class="mat-table__cell-actions">
+                            <div class="mat-table__actions">
+                                <a class="mat-btn mat-btn--ghost mat-btn--icon mat-btn--sm" href="/drive/shared-drive/@d.Id" aria-label="@L["Drive.OpenNamed", d.Name]" data-tip="@L["Drive.Open"]">@Ui.Icon("folder-open")</a>
+                                <a class="mat-btn mat-btn--ghost mat-btn--icon mat-btn--sm" href="/drives/members?id=@d.Id" aria-label="@L["Drives.MembersNamed", d.Name]" data-tip="@L["Drives.Tab.Members"]">@Ui.Icon("users")</a>
+                                <a class="mat-btn mat-btn--ghost mat-btn--icon mat-btn--sm" href="/drives/edit?id=@d.Id" aria-label="@L["Common.EditNamed", d.Name]" data-tip="@L["Common.Edit"]">@Ui.Icon("edit")</a>
+                            </div>
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </md-table>
+    }
+
+    <div class="mat-actions">
+        <a class="mat-btn mat-btn--primary" href="/drives/edit">@Ui.Icon("plus")<span>@L["Drives.New"]</span></a>
+    </div>
+</div>

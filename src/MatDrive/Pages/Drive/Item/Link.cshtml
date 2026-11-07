@@ -1,0 +1,40 @@
+@page "/drive/item/{id:long}/link"
+@model MatDrive.Pages.Drive.Item.LinkModel
+@{
+    ViewData["PageSub"] = L[Model.IsNew ? "Links.New" : "Links.Edit"].Value;
+    ViewData["Width"] = "narrow";
+}
+
+<partial name="_ItemTabs" model="Model" />
+
+<form class="mat-form" method="post" asp-route-link="@Model.LinkId" novalidate>
+    <partial name="_FormSummary" model="ViewData.ModelState" />
+    @if (Model.Address is not null)
+    {
+        <div class="mat-card">
+            <div class="mat-card__body">
+                <label class="mat-label" for="link-address">@L["Links.Address"]</label>
+                <div class="md-copyrow">
+                    <input class="mat-input mat-mono" id="link-address" type="text" readonly value="@Model.Address" />
+                    <button type="button" class="mat-btn mat-btn--secondary" data-copy="#link-address">@Ui.Icon("copy")<span>@L["Common.Copy"]</span></button>
+                </div>
+                <p class="mat-hint">@L["Links.Address.Hint"]</p>
+            </div>
+        </div>
+    }
+    <div class="mat-card">
+        <div class="mat-card__body mat-form">
+            <md-field name="Role" kind="radios" label="@L["Links.Who"]" value="@Model.Role" options="Model.Roles" hint="@L[Model.IsFolder ? "Links.Who.HintFolder" : "Links.Who.Hint"]" />
+            <md-field name="AllowDownload" kind="switch" label="@L["Links.AllowDownload"]" value="@Model.AllowDownload.ToString()" hint="@L["Links.AllowDownload.Hint"]" />
+            <md-field name="Expires" kind="date" label="@L["Links.Expires"]" value="@Model.Expires" optional hint="@L["Links.Expires.Hint"]" />
+            <md-field name="Password" kind="password" label="@L[Model.HasPassword ? "Links.Password.New" : "Links.Password"]" optional autocomplete="new-password" minlength="6" hint="@L[Model.HasPassword ? "Links.Password.HintSet" : "Links.Password.Hint"]" />
+            @if (Model.HasPassword)
+            {
+                <md-field name="ClearPassword" kind="check" label="@L["Links.Password.Clear"]" value="false" />
+            }
+            <md-field name="Note" label="@L["Links.Note"]" value="@Model.Note" maxlength="200" optional hint="@L["Links.Note.Hint"]" />
+        </div>
+    </div>
+    <md-buttons save="@L[Model.IsNew ? "Links.Create" : "Common.Save"]" back="@($"/drive/item/{Model.Id}/sharing")" delete-handler="@(Model.IsNew ? null : "Delete")" delete-label="@L["Links.Delete"]"
+                delete-confirm="@L["Links.DeleteConfirm"]" delete-ok="@L["Links.Delete"]" />
+</form>

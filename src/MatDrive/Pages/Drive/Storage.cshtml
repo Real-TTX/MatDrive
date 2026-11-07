@@ -1,0 +1,63 @@
+@page "/drive/storage"
+@model MatDrive.Pages.Drive.StorageModel
+@{
+    ViewData["Title"] = L["Drive.Storage"].Value;
+    ViewData["PageSub"] = L["Storage.Sub"].Value;
+    ViewData["Crumbs"] = new List<(string, string?)> { (L["Drive.My"].Value, "/drive"), (L["Drive.Storage"].Value, null) };
+    var u = Model.Usage;
+}
+
+<div class="mat-cols">
+    <div class="mat-col-12 mat-col-lg-5">
+        <div class="mat-card">
+            <div class="mat-card__head"><h2 class="mat-card__title">@Ui.Icon("hard-drive")@L["Drive.My"]</h2></div>
+            <div class="mat-card__body">
+                @if (u.Quota is { } quota)
+                {
+                    <div class="mat-meter md-storage-bar" role="meter" aria-valuemin="0" aria-valuemax="100" aria-valuenow="@(Math.Round(u.Share * 100))" aria-label="@L["Drive.Storage"]"><span class="mat-meter__fill" data-value="@(Math.Round(u.Share * 100))" data-tone="@(u.Share > 0.9 ? "error" : u.Share > 0.75 ? "warn" : null)"></span></div>
+                    <p>@L["Drive.UsedOf", Ui.Bytes(u.Used), Ui.Bytes(quota)]</p>
+                }
+                else
+                {
+                    <p>@L["Drive.Used", Ui.Bytes(u.Used)] · @L["Storage.NoLimit"]</p>
+                }
+                <dl class="mat-kv">
+                    <dt>@L["Drive.Trash"]</dt><dd><a href="/drive/trash">@Ui.Bytes(Model.TrashBytes)</a></dd>
+                    <dt>@L["Storage.OldVersions"]</dt><dd>@Ui.Bytes(Model.OldVersionBytes)</dd>
+                </dl>
+                <p class="mat-hint">@L["Storage.Hint"]</p>
+            </div>
+        </div>
+        @if (Model.SharedDrives.Count > 0)
+        {
+            <div class="mat-card">
+                <div class="mat-card__head"><h2 class="mat-card__title">@Ui.Icon("shared-drive")@L["Drive.SharedDrives"]</h2></div>
+                <div class="mat-card__body">
+                    <dl class="mat-kv">
+                        @foreach (var d in Model.SharedDrives)
+                        {
+                            <dt><a href="/drive/shared-drive/@d.Id">@d.Name</a></dt><dd>@Ui.Bytes(d.UsedBytes)</dd>
+                        }
+                    </dl>
+                </div>
+            </div>
+        }
+    </div>
+    <div class="mat-col-12 mat-col-lg-7">
+        <div class="mat-list">
+            <md-table caption="@L["Storage.Largest"]">
+                <thead><tr><th scope="col">@L["Storage.Largest"]</th><th scope="col" class="mat-hide-sm">@L["Drive.Col.Location"]</th><th scope="col" class="mat-num">@L["Drive.Col.Size"]</th></tr></thead>
+                <tbody>
+                    @foreach (var n in Model.Largest)
+                    {
+                        <tr>
+                            <td data-label="@L["Common.Name"]" class="mat-table__primary"><a class="md-name" href="/drive/item/@n.Id"><span class="md-ficon md-ficon--@n.Category">@Ui.Icon(FileTypes.IconOf(n.Category))</span><span class="md-name__text">@n.Name</span></a></td>
+                            <td data-label="@L["Drive.Col.Location"]" class="mat-hide-sm">@(n.Location ?? L["Drive.My"].Value)</td>
+                            <td data-label="@L["Drive.Col.Size"]" class="mat-num mat-mono">@Ui.Bytes(n.Size)</td>
+                        </tr>
+                    }
+                </tbody>
+            </md-table>
+        </div>
+    </div>
+</div>

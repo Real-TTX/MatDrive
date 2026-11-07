@@ -14,6 +14,7 @@
             <md-field name="Email" kind="email" label="@L["Account.Email"]" required value="@Model.Email" autocomplete="off" msg-required="@L["Account.Login.Email.Required"]" />
             <md-field name="Role" kind="radios" label="@L["Users.Col.Role"]" value="@Model.Role" options="Model.Roles" />
             <md-field name="IsActive" kind="switch" label="@L["Users.CanSignIn"]" value="@Model.IsActive.ToString()" />
+            <md-field name="QuotaGb" kind="number" label="@L["Users.Quota"]" value="@Model.QuotaGb" min="0" optional hint="@L["Users.Quota.Hint"]" />
             <md-field name="Password" kind="password" label="@L[Model.IsNew ? "Account.Password" : "Password.New"]" required="@Model.IsNew" optional="@(!Model.IsNew)" autocomplete="new-password"
                       hint="@(Model.IsNew ? L["Account.Password.Hint", PasswordService.MinLength].Value : L["Users.Password.Hint"].Value)" />
         </div>

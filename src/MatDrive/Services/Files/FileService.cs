@@ -52,7 +52,7 @@ public static class FileService
 
     /// <summary>The largest upload of the installation (0 = no limit).</summary>
     public static async Task<long> MaxUploadAsync(AppDbContext db, CancellationToken ct = default)
-        => await db.SystemSettings.AsNoTracking().Select(s => (long?)s.MaxUploadBytes).FirstOrDefaultAsync(ct) ?? 0;
+        => await db.SystemSettings.AsNoTracking().Where(s => s.Id == 1).Select(s => (long?)s.MaxUploadBytes).FirstOrDefaultAsync(ct) ?? 0;
 
     /// <summary>
     /// Stores an upload in a folder. <paramref name="relativePath"/> is the path of the file below the folder when a whole folder is uploaded

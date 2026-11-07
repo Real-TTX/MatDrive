@@ -1,0 +1,101 @@
+@page "/drive/item/{id:long}/sharing"
+@model MatDrive.Pages.Drive.Item.SharingModel
+@{
+    ViewData["Tab"] = "sharing";
+    ViewData["PageSub"] = L["Item.Sharing.Sub"].Value;
+}
+
+<partial name="_ItemTabs" model="Model" />
+
+<div class="mat-cols">
+    <div class="mat-col-12 mat-col-lg-7">
+        <div class="mat-card">
+            <div class="mat-card__head"><h2 class="mat-card__title">@Ui.Icon("users")@L["Item.People"]</h2></div>
+            <div class="mat-card__body">
+                @if (Model.Access.Drive.Kind == DriveKind.Shared)
+                {
+                    <p class="md-muted">@L["Item.People.DriveMembers", Model.DriveMembers.Count, Model.Access.Drive.Name]</p>
+                }
+                @if (Model.Shares.Count == 0)
+                {
+                    <p class="md-muted">@L["Item.People.None"]</p>
+                }
+                else
+                {
+                    <md-table caption="@L["Item.People"]">
+                        <thead><tr><th scope="col">@L["Members.Col.Person"]</th><th scope="col">@L["Item.Access"]</th><th scope="col"><span class="mat-sr-only">@L["Common.Actions"]</span></th></tr></thead>
+                        <tbody>
+                            @foreach (var s in Model.Shares)
+                            {
+                                var next = s.Role == AccessRole.Editor ? AccessRole.Viewer : AccessRole.Editor;
+                                var label = L[next == AccessRole.Editor ? "Item.MakeEditor" : "Item.MakeViewer"].Value;
+                                <tr>
+                                    <td data-label="@L["Members.Col.Person"]"><div class="mat-table__name"><span class="mat-avatar mat-avatar--sm" aria-hidden="true">@Ui.Initials(s.Name)</span><span>@s.Name<small class="mat-mono">@s.Email</small></span></div></td>
+                                    <td data-label="@L["Item.Access"]"><span class="mat-pill mat-pill--plain">@L["Roles." + s.Role]</span></td>
+                                    <td class="mat-table__cell-actions">
+                                        <div class="mat-table__actions">
+                                            <form method="post" asp-page-handler="Role" asp-route-id="@Model.Id" asp-route-userId="@s.UserId" asp-route-role="@next">
+                                                <button type="submit" class="mat-btn mat-btn--ghost mat-btn--icon mat-btn--sm" aria-label="@label: @s.Name" data-tip="@label">@Ui.Icon(next == AccessRole.Editor ? "edit" : "eye")</button>
+                                            </form>
+                                            <form method="post" asp-page-handler="Remove" asp-route-id="@Model.Id" asp-route-userId="@s.UserId" class="md-sep">
+                                                <button type="submit" class="mat-btn mat-btn--ghost mat-btn--icon mat-btn--sm md-danger" aria-label="@L["Item.UnshareNamed", s.Name]" data-tip="@L["Item.Unshare"]"
+                                                        data-confirm="@L["Item.UnshareConfirm", s.Name]" data-confirm-ok="@L["Item.Unshare"]">@Ui.Icon("x")</button>
+                                            </form>
+                                        </div>
+                                    </td>
+                                </tr>
+                            }
+                        </tbody>
+                    </md-table>
+                }
+
+                <form class="mat-form md-mt" method="post" asp-page-handler="Add" asp-route-id="@Model.Id" novalidate>
+                    <partial name="_FormSummary" model="ViewData.ModelState" />
+                    <md-field name="Email" kind="email" label="@L["Item.ShareWith"]" value="@Model.Email" placeholder="name@example.com" autocomplete="off" required
+                              hint="@L["Item.ShareWith.Hint"]" msg-required="@L["Account.Login.Email.Required"]" />
+                    <md-field name="NewRole" kind="radios" label="@L["Item.Access"]" value="@Model.NewRole" options="Model.Roles" />
+                    <div class="mat-btn-row mat-btn-row--plain">
+                        <button type="submit" class="mat-btn mat-btn--primary">@Ui.Icon("share")<span>@L["Item.Share"]</span></button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <div class="mat-col-12 mat-col-lg-5" id="links">
+        <div class="mat-card">
+            <div class="mat-card__head"><h2 class="mat-card__title">@Ui.Icon("link")@L["Links.Title"]</h2></div>
+            <div class="mat-card__body">
+                @if (Model.Links.Count == 0)
+                {
+                    <p class="md-muted">@L["Links.None"]</p>
+                }
+                @foreach (var l in Model.Links)
+                {
+                    var url = $"{Model.Origin}/l/{l.Token:N}";
+                    <div class="md-link">
+                        <div class="md-copyrow">
+                            <input class="mat-input mat-mono" id="link-@l.Id" type="text" readonly value="@url" aria-label="@L["Links.Address"]" />
+                            <button type="button" class="mat-btn mat-btn--secondary mat-btn--icon" data-copy="#link-@l.Id" aria-label="@L["Common.Copy"]" data-tip="@L["Common.Copy"]">@Ui.Icon("copy")</button>
+                            <a class="mat-btn mat-btn--secondary mat-btn--icon" href="/drive/item/@Model.Id/link?link=@l.Id" aria-label="@L["Common.Edit"]" data-tip="@L["Common.Edit"]">@Ui.Icon("edit")</a>
+                        </div>
+                        <p class="mat-hint">
+                            @L["Roles." + l.Role]
+                            @if (l.HasPassword) { <text> · </text>@L["Links.WithPassword"] }
+                            @if (l.ExpiresDate is { } e) { <text> · </text>@L["Links.Until", Dates.Stamp(e, Model.Zone)] }
+                            @if (!l.AllowDownload) { <text> · </text>@L["Links.NoDownload"] }
+                            <text> · </text>@L["Links.Stats", l.Visits, l.Downloads]
+                        </p>
+                    </div>
+                }
+                <div class="mat-btn-row mat-btn-row--plain">
+                    <a class="mat-btn mat-btn--primary" href="/drive/item/@Model.Id/link">@Ui.Icon("plus")<span>@L["Links.New"]</span></a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="mat-btn-row">
+    <a class="mat-btn mat-btn--secondary" href="@Model.FolderUrl">@Ui.Icon("back")<span>@L["Common.Back"]</span></a>
+</div>

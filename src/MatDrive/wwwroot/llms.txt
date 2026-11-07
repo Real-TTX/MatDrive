@@ -1,23 +1,20 @@
 # MatDrive
 
-> MatDrive is a self-hosted office suite in the browser: four apps in one – Docs (text documents like Word), Sheets (spreadsheets like Excel), Slides (presentations like PowerPoint) and Base (desktop databases like Access). It opens and saves Word, Excel, PowerPoint and CSV files, keeps versions, and shares documents with people or through a link. Other apps (MatDrive) can open their files in it with an API key. It is a Progressive Web App (installable; the last opened documents stay available offline).
+> MatDrive is a self-hosted drive in the browser, like the cloud drives people know: every person has My Drive, teams have shared drives, files and folders are shared with people (viewer, editor) or through links (password, end date, upload into a folder), files keep versions, deleted items lie in a trash, and the drive can be mounted through WebDAV. It also browses the storage locations of a NAS (local folders, SMB, SFTP, FTP, WebDAV) like a file explorer, and opens office files in MatOffice. It is a Progressive Web App.
 
-Everything except the start page needs an account or the secret link of a document. The interface is available in English and German.
+Everything except the start page needs an account or a shared link. The interface is available in English and German.
 
 ## What a person can do
 
-- Docs: write on pages (A4 or Letter) with fonts, styles, headings, lists, tables, pictures, links, headers and footers; print or save as PDF; open and save .docx, HTML, Markdown and text.
-- Sheets: cells with formulas and functions, formats, several sheets, sorting and filters, charts, frozen rows and columns; open and save .xlsx and .csv.
-- Slides: slides with text boxes, shapes, pictures and tables, designs and layouts, speaker notes and a full-screen show; open and save .pptx.
-- Base: tables with typed fields, relationships, queries, forms and reports, like a desktop database.
-- Keep a version history (snapshots and named versions), restore a version, make copies, star documents, use the trash.
-- Share documents with people who have an account (viewer or editor) or through a link.
+- Upload files and whole folders (drag & drop, large files in pieces), download files and folders (zip), preview pictures, videos, audio, PDFs and text.
+- Create folders, rename, move, copy, star, delete into the trash and restore; unpack zip files; edit text files in the browser.
+- Keep every version of a file, restore or download an older one, keep versions forever.
+- Share files and folders with people, give out links (with a password, an end date, with or without download, upload into a folder).
+- Work in shared drives with members (viewer, editor, manager).
+- Search names and the text of text files; see recent and starred items; see the activity of an item.
+- Open Word, Excel, PowerPoint and MatOffice files in MatOffice (when it is connected) and save them back as new versions.
+- Mount the drive with WebDAV (address /dav/, user = e-mail address, password = an app password).
 - Sign in locally or through MatIdentity; mails go through MatSMTP (both optional, set up by Mattiverse).
-
-## For other apps
-
-- `GET /api/v1/host/formats`, `GET /api/v1/host/new`, `POST /api/v1/host/sessions` with `Authorization: Bearer <key of a connected app>`: open a file of the app in the matching editor (WOPI-like; the file is read from and written back to the app).
-- The platform contract under /api (health, state, configure, actions) is for Mattiverse and needs a key.
 
 ## Links
 

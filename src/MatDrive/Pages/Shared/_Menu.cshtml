@@ -57,7 +57,7 @@
     <div class="md-usage">
         @if (m.Usage.Quota is { } quota)
         {
-            <div class="mat-meter @(m.Usage.Share > 0.9 ? "mat-meter--danger" : m.Usage.Share > 0.75 ? "mat-meter--warn" : "")" data-value="@(Math.Round(m.Usage.Share * 100))" role="meter" aria-valuemin="0" aria-valuemax="100" aria-valuenow="@(Math.Round(m.Usage.Share * 100))" aria-label="@L["Drive.Storage"]"><span class="mat-meter__bar"></span></div>
+            <div class="mat-meter" role="meter" aria-valuemin="0" aria-valuemax="100" aria-valuenow="@(Math.Round(m.Usage.Share * 100))" aria-label="@L["Drive.Storage"]"><span class="mat-meter__fill" data-value="@(Math.Round(m.Usage.Share * 100))" data-tone="@(m.Usage.Share > 0.9 ? "error" : m.Usage.Share > 0.75 ? "warn" : null)"></span></div>
             <a class="md-usage__text" href="/drive/storage">@L["Drive.UsedOf", Ui.Bytes(m.Usage.Used), Ui.Bytes(quota)]</a>
         }
         else

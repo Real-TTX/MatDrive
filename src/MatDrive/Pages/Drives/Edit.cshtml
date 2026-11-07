@@ -1,0 +1,42 @@
+@page "/drives/edit"
+@model MatDrive.Pages.Drives.EditModel
+@{
+    ViewData["Title"] = Model.IsNew ? L["Drives.New"].Value : Model.Name;
+    ViewData["Crumbs"] = new List<(string, string?)> { (L["Drive.SharedDrives"].Value, "/drives"), (Model.IsNew ? L["Common.New"].Value : Model.Name, null) };
+    ViewData["Width"] = "narrow";
+}
+
+@if (!Model.IsNew)
+{
+    <md-tabs label="@L["Drives.One"]">
+        <md-tab href="/drives/edit?id=@Model.Id" active="true">@L["Drives.Tab.General"]</md-tab>
+        <md-tab href="/drives/members?id=@Model.Id">@L["Drives.Tab.Members"]</md-tab>
+    </md-tabs>
+}
+
+<form class="mat-form" method="post" novalidate>
+    <partial name="_FormSummary" model="ViewData.ModelState" />
+    <div class="mat-card">
+        <div class="mat-card__body mat-form">
+            <md-field name="Name" label="@L["Common.Name"]" required value="@Model.Name" maxlength="120" autofocus disabled="@(!Model.CanManage)" msg-required="@L["Common.NameRequired"]" />
+            <md-field name="Description" kind="textarea" label="@L["Item.Description"]" value="@Model.Description" maxlength="1000" rows="3" optional disabled="@(!Model.CanManage)" />
+            <md-field name="Colour" kind="colour" label="@L["Item.Colour"]" value="@Model.Colour" optional disabled="@(!Model.CanManage)" />
+        </div>
+    </div>
+    @if (Model.Usage is { } usage)
+    {
+        <div class="mat-card">
+            <div class="mat-card__head"><h2 class="mat-card__title">@Ui.Icon("hard-drive")@L["Drive.Storage"]</h2></div>
+            <div class="mat-card__body"><p>@L["Drive.Used", Ui.Bytes(usage.Used)]</p></div>
+        </div>
+    }
+    @if (Model.CanManage)
+    {
+        <md-buttons save="@L[Model.IsNew ? "Drives.Create" : "Common.Save"]" back="/drives" delete-handler="@(Model.IsNew ? null : "Delete")" delete-label="@L["Drives.Delete"]"
+                    delete-confirm="@L["Drives.DeleteConfirm", Model.Name]" delete-ok="@L["Drives.Delete"]" />
+    }
+    else
+    {
+        <div class="mat-btn-row"><a class="mat-btn mat-btn--secondary" href="/drives">@Ui.Icon("back")<span>@L["Common.Back"]</span></a></div>
+    }
+</form>

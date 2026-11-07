@@ -159,7 +159,7 @@ public static class LocationSearch
     {
         var category = entry.IsFolder ? FileTypes.Folder : FileTypes.CategoryOf(entry.Name);
         return new LocationSearchHit(entry.Name, PathGuard.Display(entry.Path), PathGuard.Display(PathGuard.Parent(entry.Path) ?? string.Empty), entry.IsFolder, entry.Size,
-            entry.Modified, category, entry.IsFolder ? "none" : FileTypes.PreviewOf(entry.Name, entry.Size), !entry.IsFolder && FileTypes.IsEditableText(entry.Name, entry.Size), snippet);
+            DateTime.SpecifyKind(entry.Modified, DateTimeKind.Utc), category, entry.IsFolder ? "none" : FileTypes.PreviewOf(entry.Name, entry.Size), !entry.IsFolder && FileTypes.IsEditableText(entry.Name, entry.Size), snippet);
     }
 
     /// <summary>Text and code, and files of no known kind (tried, and dropped at the first zero byte); pictures, films, music, archives and documents are left out.</summary>

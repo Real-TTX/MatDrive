@@ -4,6 +4,7 @@ using MatDrive.Services;
 using MatDrive.Services.Files;
 using MatDrive.Services.Locations;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.WebUtilities;
 
 namespace MatDrive.Pages.Locations;
 
@@ -72,6 +73,7 @@ public sealed class IndexModel(AppDbContext db, LocationConnections connections)
 
         Crumbs = crumbs;
         ViewData["NavKey"] = "location-" + Id;
+        ShowHidden = hidden;
         Toolbar = new ToolbarModel
         {
             Id = "location",
@@ -80,11 +82,7 @@ public sealed class IndexModel(AppDbContext db, LocationConnections connections)
             Search = search,
             SearchField = true,
             SearchPlaceholder = Text.T("Locations.SearchHere"),
-            Filters =
-            [
-                new FilterField("type", Text.T("Locations.Col.Type"), FileTypes.Categories.Select(c => new FilterOption(c, Text.T("Locations.Category." + c))).ToList(), type),
-                new FilterField("hidden", Text.T("Locations.Hidden"), [new FilterOption("show", Text.T("Locations.Hidden.Show"))], hidden ? "show" : null),
-            ],
+            Filters = [new FilterField("type", Text.T("Locations.Col.Type"), FileTypes.Categories.Select(c => new FilterOption(c, Text.T("Types." + c))).ToList(), type)],
             SortOptions = [new("name", Text.T("Common.Name")), new("modified", Text.T("Locations.Col.Modified")), new("size", Text.T("Locations.Col.Size"))],
             Sort = sort,
             Descending = desc,
@@ -94,10 +92,32 @@ public sealed class IndexModel(AppDbContext db, LocationConnections connections)
             Matching = folder.Matching,
             Noun = Text.T("Locations.Items"),
             NounOne = Text.T("Locations.Item"),
+
+            // hidden files (names with a leading dot) are a switch of the top bar: every tool of the toolbar keeps it
+            Keep = new Dictionary<string, string?> { ["hidden"] = hidden ? "show" : null },
         };
         Pager = new PagerModel { Page = page, PageSize = PageSize, Total = folder.Matching, Url = Toolbar.UrlWithPage };
+
+        // the same list with hidden files shown or not (search, type, sort and view stay)
+        var current = Toolbar.UrlWithout(string.Empty);
+        var query = QueryHelpers.ParseQuery(current.Contains('?') ? current[current.IndexOf('?')..] : string.Empty)
+            .Where(p => p.Key != "hidden")
+            .Select(p => new KeyValuePair<string, string?>(p.Key, p.Value.ToString()))
+            .ToList();
+        if (!hidden)
+        {
+            query.Insert(0, new("hidden", "show"));
+        }
+
+        HiddenUrl = QueryHelpers.AddQueryString(Toolbar.Action, query);
         return Page();
     }
+
+    /// <summary>Whether hidden files (a leading dot, the hidden flag of SMB) are listed.</summary>
+    public bool ShowHidden { get; private set; }
+
+    /// <summary>The same folder with hidden files switched the other way.</summary>
+    public string HiddenUrl { get; private set; } = string.Empty;
 
     /// <summary>The address of a folder of a location: every segment encoded (<c>/locations/3/My%20photos/2026</c>).</summary>
     public static string BrowseUrl(long id, string path)

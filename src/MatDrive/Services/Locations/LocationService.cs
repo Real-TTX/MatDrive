@@ -236,6 +236,61 @@ public static partial class LocationService
         }
     }
 
+    /// <summary>
+    /// Which files of an upload are there already, asked once before the first byte goes out (the browser then asks the person: replace, keep both, skip). Each
+    /// folder is listed once; names are compared without case (a share of Windows does not tell them apart). At most <see cref="MaxExistsCheck"/> paths.
+    /// </summary>
+    public static async Task<Outcome<IReadOnlyList<string>>> ExistingAsync(AppDbContext db, LocationConnections connections, long userId, long locationId, string? folder,
+        IReadOnlyList<string> relativePaths, CancellationToken ct = default)
+    {
+        var context = await OpenAsync(db, connections, userId, locationId, AccessRole.Editor, ct);
+        if (context is null)
+        {
+            return Outcome<IReadOnlyList<string>>.Denied();
+        }
+
+        return await Guard(connections, context, async () =>
+        {
+            var start = PathGuard.Check(folder);
+            var listed = new Dictionary<string, HashSet<string>?>(StringComparer.Ordinal);
+            var found = new List<string>();
+            foreach (var relative in relativePaths.Take(MaxExistsCheck))
+            {
+                var parts = (relative ?? string.Empty).Replace('\\', '/').Split('/', StringSplitOptions.RemoveEmptyEntries).Select(NodeService.CleanName).ToList();
+                if (parts.Count == 0 || parts.Any(p => p is null))
+                {
+                    continue;
+                }
+
+                var target = PathGuard.Combine(start, string.Join('/', parts!));
+                var parent = PathGuard.Parent(target) ?? string.Empty;
+                if (!listed.TryGetValue(parent, out var names))
+                {
+                    try
+                    {
+                        names = (await context.Provider.ListAsync(parent, ct)).Select(e => e.Name).ToHashSet(StringComparer.OrdinalIgnoreCase);
+                    }
+                    catch (LocationException ex) when (ex.Code is LocationError.NotFound or LocationError.InvalidPath)
+                    {
+                        names = null; // a folder that is not there yet: nothing in it is taken
+                    }
+
+                    listed[parent] = names;
+                }
+
+                if (names?.Contains(PathGuard.NameOf(target)) == true)
+                {
+                    found.Add(relative!);
+                }
+            }
+
+            return (IReadOnlyList<string>)found;
+        });
+    }
+
+    /// <summary>The most paths <see cref="ExistingAsync"/> looks at (an upload of a large folder: the rest is checked file by file while it arrives).</summary>
+    public const int MaxExistsCheck = 20_000;
+
     public static async Task<Outcome<LocationEntry>> CreateFolderAsync(AppDbContext db, LocationConnections connections, long userId, long locationId, string? parent, string? name, CancellationToken ct = default)
     {
         var context = await OpenAsync(db, connections, userId, locationId, AccessRole.Editor, ct);

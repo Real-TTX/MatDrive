@@ -89,7 +89,7 @@ public sealed partial class TextCatalogTests
     public void The_language_changes_the_text()
     {
         Assert.Equal("Shared with me", Languages.In("en", () => Text.T("Drive.SharedWithMe")));
-        Assert.Equal("Mit mir geteilt", Languages.In("de", () => Text.T("Drive.SharedWithMe")));
+        Assert.Equal("Für mich freigegeben", Languages.In("de", () => Text.T("Drive.SharedWithMe")));
         Assert.Equal("Mindestens 10 Zeichen.", Languages.In("de", () => Text.T("Account.Password.Hint", 10)));
     }
 

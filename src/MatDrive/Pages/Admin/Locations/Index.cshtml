@@ -65,7 +65,7 @@
                         <td data-label="@L["Locations.Col.Free"]" class="mat-num mat-mono mat-hide-sm">
                             @if (space is not null && l.IsActive)
                             {
-                                <span title="@L["Locations.SpaceOf", Ui.Bytes(space.Free), Ui.Bytes(space.Total)]">@Ui.Bytes(space.Free)</span>
+                                <span title="@L["Locations.SpaceFree", Ui.Bytes(space.Free), Ui.Bytes(space.Total)]">@Ui.Bytes(space.Free)</span>
                             }
                             else
                             {

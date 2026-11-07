@@ -27,11 +27,11 @@ public sealed class AccessModel(AppDbContext db) : AppPageModel
     public List<Choice> EveryoneChoices { get; } =
     [
         new("None", Text.T("Locations.Everyone.None"), Text.T("Locations.Everyone.NoneHint")),
-        new(nameof(AccessRole.Viewer), Text.T("Locations.Role.Viewer"), Text.T("Locations.Everyone.ViewerHint")),
-        new(nameof(AccessRole.Editor), Text.T("Locations.Role.Editor"), Text.T("Locations.Everyone.EditorHint")),
+        new(nameof(AccessRole.Viewer), Text.T("Roles.Viewer"), Text.T("Locations.Everyone.ViewerHint")),
+        new(nameof(AccessRole.Editor), Text.T("Roles.Editor"), Text.T("Locations.Everyone.EditorHint")),
     ];
 
-    public List<Choice> RoleChoices { get; } = [new(nameof(AccessRole.Viewer), Text.T("Locations.Role.Viewer")), new(nameof(AccessRole.Editor), Text.T("Locations.Role.Editor"))];
+    public List<Choice> RoleChoices { get; } = [new(nameof(AccessRole.Viewer), Text.T("Roles.Viewer")), new(nameof(AccessRole.Editor), Text.T("Roles.Editor"))];
 
     public async Task<IActionResult> OnGetAsync()
     {

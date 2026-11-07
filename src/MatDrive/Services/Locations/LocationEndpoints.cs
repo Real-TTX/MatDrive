@@ -22,6 +22,8 @@ public sealed record LocationTextRequest(string? Path, string? Text, string? ETa
 
 public sealed record LocationModeRequest(string? Path, int Mode);
 
+public sealed record LocationExistsRequest(string? Folder, string[]? Paths);
+
 /// <summary>The services of the storage locations (one call in Program.cs).</summary>
 public static class LocationSetup
 {
@@ -151,6 +153,10 @@ public static class LocationEndpoints
             return written.Error is null ? Results.Json(new { name = written.Entry!.Name, path = PathGuard.Display(written.Entry.Path) }, Json) : Problem(written.Error);
         }).DisableRequestSizeLimitFor();
 
+        // which files of an upload are there already (asked once before the bytes go out)
+        live.MapPost("/{id:long}/exists", async (long id, LocationExistsRequest body, HttpContext http, AppDbContext db, LocationConnections connections, CurrentUser me) =>
+            Answer(await LocationService.ExistingAsync(db, connections, me.RequiredId, id, body.Folder, body.Paths ?? [], http.RequestAborted), found => new { existing = found }));
+
         live.MapPost("/{id:long}/folders", async (long id, LocationNameRequest body, HttpContext http, AppDbContext db, LocationConnections connections, CurrentUser me) =>
             Answer(await LocationService.CreateFolderAsync(db, connections, me.RequiredId, id, body.Path, body.Name, http.RequestAborted), e => new { name = e.Name, path = PathGuard.Display(e.Path) }));
 
@@ -205,7 +211,7 @@ public static class LocationEndpoints
             return Results.Json(new
             {
                 name = p.Entry.Name, path = PathGuard.Display(p.Entry.Path), folder = p.Entry.IsFolder, size = p.Entry.Size,
-                modified = p.Entry.Modified > DateTime.MinValue ? p.Entry.Modified : (DateTime?)null, hidden = p.Entry.IsHidden, link = p.Entry.IsLink,
+                modified = p.Entry.Modified > DateTime.MinValue.AddDays(1) ? DateTime.SpecifyKind(p.Entry.Modified, DateTimeKind.Utc) : (DateTime?)null, hidden = p.Entry.IsHidden, link = p.Entry.IsLink,
                 category = p.Entry.IsFolder ? FileTypes.Folder : FileTypes.CategoryOf(p.Entry.Name), mime = p.Entry.IsFolder ? null : FileTypes.MimeOf(p.Entry.Name),
                 where = p.Where, kind = p.KindName, items = p.Items,
                 permissions = p.Permissions is { } perm ? new { mode = perm.Mode, octal = LocationPermissions.ToText(perm.Mode), symbols = LocationPermissions.ToSymbols(perm.Mode), owner = perm.Owner, group = perm.Group } : null,

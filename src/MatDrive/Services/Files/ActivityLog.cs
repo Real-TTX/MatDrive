@@ -8,6 +8,19 @@ public sealed record ActivityRow(long Id, DateTime Date, string Action, string? 
 /// <summary>What happened in the drives. Entries are added together with the change they describe (the same SaveChanges), or on their own.</summary>
 public static class ActivityLog
 {
+    private static readonly AsyncLocal<string?> Source = new();
+
+    /// <summary>
+    /// Marks every entry written from here on in the current flow of work with where the changes come from (a WebDAV request: <c>webdav</c>): it becomes the
+    /// detail of the entry, or follows it (<c>v3 · webdav</c>). The changes are still logged once, by the business layer. Dispose the answer to end it.
+    /// </summary>
+    public static IDisposable From(string source)
+    {
+        var before = Source.Value;
+        Source.Value = source;
+        return new SourceScope(before);
+    }
+
     /// <summary>Adds an entry to the context (saved with the next SaveChanges).</summary>
     public static void Add(AppDbContext db, long? userId, string action, Node? node = null, string? detail = null, long? driveId = null, string? target = null)
         => db.Activities.Add(new Activity
@@ -17,7 +30,7 @@ public static class ActivityLog
             NodeId = node?.Id is > 0 ? node.Id : null,
             DriveId = node?.DriveId ?? driveId,
             Target = Cut(target ?? node?.Name, 255),
-            Detail = Cut(detail, 1000),
+            Detail = Cut(Source.Value is { } source ? (string.IsNullOrEmpty(detail) ? source : detail + " · " + source) : detail, 1000),
             OccurredDate = DateTime.UtcNow,
         });
 
@@ -79,4 +92,9 @@ public static class ActivityLog
             .ToListAsync(ct);
 
     private static string? Cut(string? text, int max) => text is null ? null : text.Length > max ? text[..max] : text;
+
+    private sealed class SourceScope(string? before) : IDisposable
+    {
+        public void Dispose() => Source.Value = before;
+    }
 }

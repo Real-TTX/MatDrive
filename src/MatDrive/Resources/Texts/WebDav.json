@@ -1,0 +1,38 @@
+{
+  "WebDav.SignIn": {
+    "en": "Sign in with your address and an app password (Account → App passwords).",
+    "de": "Melde dich mit deiner Adresse und einem App-Passwort an (Konto → App-Passwörter)."
+  },
+  "WebDav.Throttled": {
+    "en": "Too many failed sign-ins. Try again in a minute.",
+    "de": "Zu viele fehlgeschlagene Anmeldungen. Versuche es in einer Minute erneut."
+  },
+  "WebDav.Listing.Title": {
+    "en": "{0} – WebDAV",
+    "de": "{0} – WebDAV"
+  },
+  "WebDav.Listing.Intro": {
+    "en": "This is the WebDAV address of MatDrive. Connect it as a network drive (Windows Explorer, Finder, a file manager) with your address and an app password.",
+    "de": "Das ist die WebDAV-Adresse von MatDrive. Verbinde sie als Netzlaufwerk (Windows-Explorer, Finder, ein Dateimanager) mit deiner Adresse und einem App-Passwort."
+  },
+  "WebDav.Listing.Name": {
+    "en": "Name",
+    "de": "Name"
+  },
+  "WebDav.Listing.Size": {
+    "en": "Size",
+    "de": "Größe"
+  },
+  "WebDav.Listing.Modified": {
+    "en": "Modified",
+    "de": "Geändert"
+  },
+  "WebDav.Listing.Up": {
+    "en": "Parent folder",
+    "de": "Übergeordneter Ordner"
+  },
+  "WebDav.Listing.Empty": {
+    "en": "This folder is empty.",
+    "de": "Dieser Ordner ist leer."
+  }
+}

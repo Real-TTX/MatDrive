@@ -1,0 +1,46 @@
+@page "/Account/Register"
+@model MatDrive.Pages.Account.RegisterModel
+@{
+    Layout = "_LayoutAuth";
+    ViewData["Title"] = L["Account.Register.Title"].Value;
+}
+
+<div class="mat-auth__card">
+    <div class="mat-auth__brand">
+        @Ui.Logo("lg")
+        <h1>@L[Model.First ? "Account.Register.Setup" : "Account.Register.Heading"]</h1>
+        <p class="mat-muted">@L[Model.First ? "Account.Register.SetupIntro" : "Account.Register.Intro"]</p>
+    </div>
+
+    @if (!Model.Open)
+    {
+        <div class="mat-alert mat-alert--info" role="status">
+            @Ui.Icon("info")
+            <div class="mat-alert__body">@L["Account.Register.Closed"]</div>
+        </div>
+        <div class="mat-btn-row mat-btn-row--plain md-center">
+            <a class="mat-btn mat-btn--primary" href="/Account/Login">@Ui.Icon("login")<span>@L["Account.Register.ToLogin"]</span></a>
+        </div>
+    }
+    else
+    {
+        <form class="mat-form" method="post" novalidate>
+            <partial name="_FormSummary" model="ViewData.ModelState" />
+            <md-field name="DisplayName" label="@L["Account.Name"]" required autocomplete="name" value="@Model.DisplayName" maxlength="120" autofocus msg-required="@L["Account.Name.Required"]" />
+            <md-field name="Email" kind="email" label="@L["Account.Email"]" required autocomplete="email" inputmode="email" value="@Model.Email" msg-required="@L["Account.Login.Email.Required"]" />
+            <md-field name="Password" kind="password" label="@L["Account.Password"]" required autocomplete="new-password" minlength="@PasswordService.MinLength" hint="@L["Account.Password.Hint", PasswordService.MinLength]" msg-required="@L["Account.Password.Required"]" />
+            <input type="hidden" name="TimeZone" value="@Model.TimeZone" data-detect-zone />
+            <div class="mat-btn-row mat-btn-row--plain">
+                <button type="submit" class="mat-btn mat-btn--primary mat-btn--block">@Ui.Icon("rocket")<span>@L["Account.Register.Submit"]</span></button>
+            </div>
+            @if (!Model.First)
+            {
+                <p class="mat-muted">@L["Account.Register.HaveAccount"] <a href="/Account/Login">@L["Account.Login.Title"]</a></p>
+            }
+        </form>
+    }
+</div>
+
+@section Scripts {
+    <script src="~/js/zone.js" asp-append-version="true"></script>
+}

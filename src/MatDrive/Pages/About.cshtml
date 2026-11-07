@@ -1,0 +1,41 @@
+@page "/About"
+@model MatDrive.Pages.AboutModel
+@{
+    ViewData["Title"] = L["About.Title"].Value;
+    ViewData["Crumbs"] = new List<(string, string?)> { (L["About.Title"].Value, null) };
+    ViewData["Width"] = "narrow";
+}
+
+<div class="mat-card">
+    <div class="mat-card__body md-about">
+        <div class="md-about__head">
+            @Ui.Logo("lg")
+            <div>
+                <h2>@Ui.AppName</h2>
+                <p>@L["About.Tagline"]</p>
+            </div>
+        </div>
+        <dl class="md-dl">
+            <dt>@L["About.Version"]</dt><dd class="mat-mono">@AppInfo.Version</dd>
+            <dt>@L["About.Channel"]</dt><dd>@L["About.Channel." + Model.Channel]</dd>
+        </dl>
+    </div>
+</div>
+
+<div class="mat-card">
+    <div class="mat-card__head"><h2 class="mat-card__title">@Ui.Icon("plug")@L["About.Access"]</h2></div>
+    <div class="mat-card__body">
+        <dl class="md-dl">
+            <dt>WebDAV</dt><dd class="mat-mono">@(ViewContext.HttpContext.Request.Scheme)://@(ViewContext.HttpContext.Request.Host)/dav/</dd>
+        </dl>
+        <p class="md-muted">@L["About.Access.Text"]</p>
+    </div>
+</div>
+
+<div class="mat-card">
+    <div class="mat-card__body">
+        <p>@L["About.Family"]</p>
+        <p class="md-muted">@L["About.Libraries"]</p>
+        <p class="md-muted">@L["About.Author"]</p>
+    </div>
+</div>

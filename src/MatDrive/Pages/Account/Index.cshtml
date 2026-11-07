@@ -1,0 +1,31 @@
+@page "/Account"
+@model MatDrive.Pages.Account.IndexModel
+@{
+    ViewData["Title"] = L["Settings.Profile"].Value;
+    ViewData["Crumbs"] = new List<(string, string?)> { (L["Settings.Title"].Value, null), (L["Settings.Profile"].Value, null) };
+    ViewData["Width"] = "narrow";
+}
+
+<form class="mat-form" method="post" novalidate>
+    <partial name="_FormSummary" model="ViewData.ModelState" />
+    <div class="mat-card">
+        <div class="mat-card__head"><h2 class="mat-card__title">@Ui.Icon("user")@L["Settings.Profile"]</h2></div>
+        <div class="mat-card__body mat-form">
+            <md-field name="DisplayName" label="@L["Account.Name"]" required value="@Model.DisplayName" maxlength="120" autocomplete="name" msg-required="@L["Account.Name.Required"]" />
+            <md-field name="EmailShown" kind="email" label="@L["Account.Email"]" value="@Model.Email" disabled hint="@L["Settings.Email.Hint"]" />
+            <md-field name="Language" kind="radios" label="@L["Common.Language"]" value="@Model.Language" options="Model.LanguageChoices" />
+            <md-field name="TimeZone" kind="picker" label="@L["Settings.TimeZone"]" value="@Model.TimeZone" options="Model.Zones" picker="search" hint="@L["Settings.TimeZone.Hint"]" />
+            <md-field name="Scheme" kind="radios" label="@L["Settings.Scheme"]" value="@Model.Scheme" options="Model.Schemes" />
+        </div>
+    </div>
+    <div class="mat-card">
+        <div class="mat-card__head"><h2 class="mat-card__title">@Ui.Icon("share")@L["Settings.Sharing"]</h2></div>
+        <div class="mat-card__body mat-form">
+            @if (Model.MailAvailable)
+            {
+                <md-field name="MailOnShare" kind="switch" label="@L["Settings.MailOnShare"]" value="@Model.MailOnShare.ToString()" hint="@L["Settings.MailOnShare.Hint"]" />
+            }
+        </div>
+    </div>
+    <md-buttons save="@L["Common.Save"]" back="/drive" />
+</form>

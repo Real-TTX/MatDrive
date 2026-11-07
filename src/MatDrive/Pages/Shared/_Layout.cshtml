@@ -1,0 +1,211 @@
+@inject Assets Toolkit
+@inject CurrentUser Me
+@inject MenuService Menus
+@{
+    // A page fills these in: Title, PageSub (one line under it), Crumbs (the breadcrumb: a list of (Text, Url?)), Width ("narrow" or "wide"),
+    // OwnHead (the page draws its own head), NavKey (the item of the menu), SearchText (the text of the search in the top bar).
+    // The menu (documents, settings, admin) follows the address.
+    var user = Me.Snapshot!;
+    var title = ViewData["Title"] as string ?? Ui.AppName;
+    var sub = ViewData["PageSub"] as string;
+    var crumbs = ViewData["Crumbs"] as IReadOnlyList<(string Text, string? Url)> ?? [];
+    var width = ViewData["Width"] as string;
+    var ownHead = ViewData["OwnHead"] is true;
+    var menu = await Menus.GetAsync();
+    var themeAttr = user.Theme is "light" or "dark" ? $" data-theme=\"{user.Theme}\"" : string.Empty;
+    var area = MenuService.AreaOf(Context.Request.Path.Value);
+    var areas = MenuService.Areas(Me.IsAdmin);
+    var current = areas.First(a => a.Id == area);
+}
+<!DOCTYPE html>
+<html @ClientTexts.RootAttributes() data-app="@Ui.AppId" data-user="@user.Id" data-scheme="@user.Scheme"@Html.Raw(themeAttr)>
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+    <meta name="color-scheme" content="light dark" />
+    <meta name="theme-color" content="#f5f4f1" media="(prefers-color-scheme: light)" />
+    <meta name="theme-color" content="#151514" media="(prefers-color-scheme: dark)" />
+    <meta name="robots" content="noindex" />
+    <title>@title · @Ui.AppName</title>
+    <link rel="icon" type="image/svg+xml" href="~/favicon.svg" />
+    <link rel="icon" type="image/png" sizes="32x32" href="~/img/favicon-32.png" />
+    <link rel="manifest" href="~/manifest.webmanifest" />
+    <link rel="apple-touch-icon" href="~/img/apple-touch-icon.png" />
+    <meta name="mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="default" />
+    <meta name="apple-mobile-web-app-title" content="@Ui.AppName" />
+    <script src="~/matui/matui.boot.js" asp-append-version="true"></script>
+    <link rel="stylesheet" href="~/matui/matui.css" asp-append-version="true" />
+    <link rel="stylesheet" href="~/css/app.css" asp-append-version="true" />
+</head>
+<body>
+    <a class="mat-skip" href="#main">@L["Shell.SkipToContent"]</a>
+    @Html.Raw(Toolkit.Sprite)
+
+    <div class="mat-app">
+        <aside class="mat-nav" id="mat-nav">
+            <div class="mat-nav__brand">
+                <a href="/drive" aria-label="@L["Shell.HomeLabel"]">
+                    @* the word mark: one image for light and one for dark surfaces, app.css shows the one of the theme *@
+                    <img class="md-brandmark md-brandmark--light" src="~/img/logo/matdrive-logo.svg" alt="@Ui.AppName" width="166" height="40" />
+                    <img class="md-brandmark md-brandmark--dark" src="~/img/logo/matdrive-logo-dark.svg" alt="@Ui.AppName" width="166" height="40" />
+                </a>
+                <button type="button" class="mat-btn mat-btn--ghost mat-btn--icon mat-nav__close" data-nav-close aria-label="@L["Shell.CloseMenu"]">@Ui.Icon("x")</button>
+            </div>
+
+            <partial name="_Menu" model="(menu, area)" />
+
+            <div class="mat-nav__foot">
+                <div class="mat-nav__switch mat-nav__switch--foot">
+                    <button type="button" class="mat-switcher" data-menu-toggle="nav-switch-menu" data-menu-place="top" aria-haspopup="menu" aria-expanded="false">
+                        <span class="mat-switcher__icon">@Ui.Icon(current.Icon)</span>
+                        <span class="mat-switcher__text"><small data-nav-label="@L["Shell.Menu"]">@L["Shell.Menu"]</small><span class="mat-switcher__name">@current.Title</span></span>
+                        @Ui.Icon("chevron-up", "mat-switcher__chev")
+                        <span class="mat-switcher__dot" hidden></span>
+                    </button>
+                </div>
+                <div class="mat-nav__account">
+                    <button type="button" class="mat-user" data-menu-toggle="user-menu" data-menu-place="top" aria-haspopup="menu" aria-expanded="false">
+                        <span class="mat-avatar" aria-hidden="true">@Ui.Initials(user.DisplayName)</span>
+                        <span class="mat-user__text">
+                            <span class="mat-user__name">@user.DisplayName</span>
+                            <span class="mat-user__role">@Me.RoleName</span>
+                        </span>
+                        @Ui.Icon("chevron-up", "mat-user__chev")
+                    </button>
+                    <button type="button" class="mat-theme" data-theme-toggle data-theme-state="@user.Theme" data-theme-save-url="/Account?handler=Theme" aria-label="@L["Shell.Theme"]" title="@L["Shell.Theme"]">
+                        <svg class="mat-icon" data-theme-icon="system" aria-hidden="true" focusable="false"><use href="#mat-i-monitor"></use></svg>
+                        <svg class="mat-icon" data-theme-icon="light" aria-hidden="true" focusable="false"><use href="#mat-i-sun"></use></svg>
+                        <svg class="mat-icon" data-theme-icon="dark" aria-hidden="true" focusable="false"><use href="#mat-i-moon"></use></svg>
+                    </button>
+                </div>
+                @* the version leads to the About page *@
+                <div class="mat-nav__version"><a href="/About" title="@L["About.Title"]">@AppInfo.Version</a></div>
+            </div>
+        </aside>
+
+        <div class="mat-main">
+            <header class="mat-topbar">
+                <button type="button" class="mat-burger" data-nav-toggle aria-label="@L["Shell.OpenMenu"]" aria-controls="mat-nav" aria-expanded="false">@Ui.Icon("menu")</button>
+                <nav class="mat-crumbs" aria-label="@L["Shell.Breadcrumb"]">
+                    <ol>
+                        @if (crumbs.Count == 0)
+                        {
+                            <li aria-current="page">@title</li>
+                        }
+                        else
+                        {
+                            @for (var i = 0; i < crumbs.Count; i++)
+                            {
+                                var c = crumbs[i];
+                                if (i == crumbs.Count - 1 || c.Url is null)
+                                {
+                                    <li aria-current="page">@c.Text</li>
+                                }
+                                else
+                                {
+                                    <li><a href="@c.Url">@c.Text</a></li>
+                                }
+                            }
+                        }
+                    </ol>
+                </nav>
+                @* the search of the whole drive (SHELL-20) *@
+                <div class="mat-topbar__search">
+                    <form role="search" action="/drive/search" method="get">
+                        <label class="mat-sr-only" for="md-search">@L["Drive.Search"]</label>
+                        <div class="mat-search" data-autocomplete data-search-url="/live/drive/suggest" data-results-url="/drive/search" data-recent="drive" data-key="/,mod+k">
+                            <input class="mat-search__input" type="search" id="md-search" name="q" placeholder="@L["Drive.Search"]" value="@(ViewData["SearchText"] as string)" />
+                        </div>
+                    </form>
+                </div>
+                <div class="mat-topbar__actions">
+                    @* the network: shown only while the device is offline (offline.js); a click tries again *@
+                    <button type="button" class="md-offline" id="md-offline" hidden>@Ui.Icon("cloud")<span data-offline-text></span></button>
+                    @await RenderSectionAsync("TopActions", required: false)
+                    <button type="button" class="mat-btn mat-btn--primary mat-btn--icon" data-menu-toggle="new-menu" aria-haspopup="menu" aria-expanded="false" aria-label="@L["Drive.New"]" data-tip="@L["Drive.New"]">@Ui.Icon("plus")</button>
+                </div>
+            </header>
+
+            <main class="mat-page @(width == "narrow" ? "mat-page--narrow" : width == "wide" ? "mat-page--wide" : "") @(ViewData["PageClass"])" id="main">
+                @if (!ownHead)
+                {
+                    <div class="mat-page__head">
+                        <div class="mat-page__title">
+                            <h1>@title</h1>
+                            @if (!string.IsNullOrEmpty(sub))
+                            {
+                                <p class="mat-page__sub">@sub</p>
+                            }
+                        </div>
+                    </div>
+                }
+
+                @RenderBody()
+            </main>
+        </div>
+    </div>
+
+    @* the switcher of the menus (SHELL-15): the documents, the settings and – for an administrator – the administration *@
+    <div class="mat-menu" id="nav-switch-menu" role="menu" aria-label="@L["Shell.Menus"]" data-nav-scope="mat-nav" hidden>
+        @foreach (var a in areas)
+        {
+            <button type="button" class="mat-menu__item" role="menuitemradio" aria-checked="@(a.Id == area ? "true" : "false")" data-nav-set="@a.Id" data-nav-title="@a.Title">
+                @Ui.Icon(a.Icon)<span>@a.Title</span>
+                @Ui.Icon("check", "mat-menu__check")
+            </button>
+        }
+    </div>
+
+    @* "New": a folder, files, a folder from the device, and the documents of MatOffice when it is connected (drive.js; on a page that is no folder it opens My Drive first) *@
+    <div class="mat-menu" id="new-menu" role="menu" aria-label="@L["Drive.New"]" hidden>
+        <button type="button" class="mat-menu__item" role="menuitem" data-new="folder">@Ui.Icon("folder-plus")<span>@L["Drive.NewFolder"]</span></button>
+        <div class="mat-menu__sep" role="separator"></div>
+        <button type="button" class="mat-menu__item" role="menuitem" data-new="files">@Ui.Icon("upload")<span>@L["Drive.UploadFiles"]</span></button>
+        <button type="button" class="mat-menu__item" role="menuitem" data-new="dir">@Ui.Icon("folder-upload")<span>@L["Drive.UploadFolder"]</span></button>
+        @if (menu.OfficeKinds.Count > 0)
+        {
+            <div class="mat-menu__sep" role="separator"></div>
+            @foreach (var k in menu.OfficeKinds)
+            {
+                <button type="button" class="mat-menu__item md-office-kind" role="menuitem" data-new="office:@k.Kind"><svg class="mat-icon" data-colour="@k.Colour" aria-hidden="true" focusable="false"><use href="#mat-i-kind-@k.Kind"></use></svg><span>@k.Name</span></button>
+            }
+        }
+    </div>
+
+    <div class="mat-menu" id="user-menu" role="menu" aria-label="@user.DisplayName" hidden>
+        <div class="mat-menu__head">
+            <span class="mat-avatar" aria-hidden="true">@Ui.Initials(user.DisplayName)</span>
+            <div><strong>@user.DisplayName</strong><small>@user.Email</small></div>
+        </div>
+        <a class="mat-menu__item" role="menuitem" href="/Account">@Ui.Icon("settings")<span>@L["Settings.Title"]</span></a>
+        <button type="button" class="mat-menu__item" role="menuitem" data-pwa-install hidden>@Ui.Icon("download")<span>@L["Shell.Install"]</span></button>
+        <div class="mat-menu__sep" role="separator"></div>
+        <form method="post" action="/Account/Logout" data-logout>
+            @Html.AntiForgeryToken()
+            <button type="submit" class="mat-menu__item mat-menu__item--danger" role="menuitem">@Ui.Icon("logout")<span>@L["Shell.SignOut"]</span></button>
+        </form>
+    </div>
+
+    @* the anti-forgery token of the page: the scripts send it with their requests *@
+    <form hidden data-page-token>@Html.AntiForgeryToken()</form>
+
+    @if (TempData["Flash"] is string flash)
+    {
+        <div data-toast="@flash" data-tone="success" hidden></div>
+    }
+
+    @if (TempData["FlashError"] is string flashError)
+    {
+        <div data-toast="@flashError" data-tone="danger" hidden></div>
+    }
+
+    @ClientTexts.Script()
+    <script src="~/matui/matui.js" asp-append-version="true"></script>
+    <script src="~/js/offline.js" asp-append-version="true"></script>
+    <script src="~/js/drive.js" asp-append-version="true"></script>
+    <script src="~/js/pwa.js" asp-append-version="true"></script>
+    @await RenderSectionAsync("Scripts", required: false)
+</body>
+</html>

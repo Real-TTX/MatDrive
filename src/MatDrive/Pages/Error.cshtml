@@ -1,0 +1,17 @@
+@page "/Error"
+@model MatDrive.Pages.ErrorModel
+@{
+    Layout = "_LayoutAuth";
+    ViewData["Title"] = L[$"Errors.{Model.Kind}.Title"].Value;
+}
+
+<div class="mat-auth__card">
+    <div class="mat-auth__brand">
+        @Ui.Logo("lg")
+        <h1>@L[$"Errors.{Model.Kind}.Title"]</h1>
+        <p class="mat-muted">@L[$"Errors.{Model.Kind}.Text"]</p>
+    </div>
+    <div class="mat-btn-row mat-btn-row--plain md-center">
+        <a class="mat-btn mat-btn--primary" href="/">@Ui.Icon("home")<span>@L["Errors.Home"]</span></a>
+    </div>
+</div>

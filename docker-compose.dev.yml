@@ -1,0 +1,60 @@
+# MatDrive - Development (branch dev, image :nightly) with pgAdmin
+#   docker compose -f docker-compose.dev.yml up -d
+#   App:     http://localhost:4810
+#   pgAdmin: http://localhost:4811   (no sign-in; database password: matdrive)
+name: matdrive-dev
+
+services:
+  web:
+    image: ghcr.io/real-ttx/matdrive:nightly
+    restart: unless-stopped
+    ports:
+      - "4810:4810"
+    volumes:
+      - web-data:/data
+    depends_on:
+      db:
+        condition: service_healthy
+
+  db:
+    image: postgres:17
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: matdrive
+      POSTGRES_USER: matdrive
+      POSTGRES_PASSWORD: matdrive
+    volumes:
+      - db-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U matdrive -d matdrive"]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+
+  pgadmin:
+    image: dpage/pgadmin4:latest
+    restart: unless-stopped
+    ports:
+      - "4811:80"
+    environment:
+      PGADMIN_DEFAULT_EMAIL: admin@matdrive.example.com
+      PGADMIN_DEFAULT_PASSWORD: matdrive
+      PGADMIN_CONFIG_SERVER_MODE: "False"
+      PGADMIN_CONFIG_MASTER_PASSWORD_REQUIRED: "False"
+    configs:
+      - source: servers
+        target: /pgadmin4/servers.json
+    volumes:
+      - pgadmin-data:/var/lib/pgadmin
+    depends_on:
+      - db
+
+configs:
+  servers:
+    content: |
+      {"Servers": {"1": {"Name": "MatDrive", "Group": "Servers", "Host": "db", "Port": 5432, "MaintenanceDB": "matdrive", "Username": "matdrive", "SSLMode": "prefer"}}}
+
+volumes:
+  web-data:
+  db-data:
+  pgadmin-data:

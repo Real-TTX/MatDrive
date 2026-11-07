@@ -1,0 +1,9 @@
+# MatDrive - only the start page is public. Everything else needs an account or the link of a document.
+User-agent: *
+Allow: /$
+Allow: /llms.txt
+Allow: /favicon.svg
+Allow: /img/
+Disallow: /
+
+# Information for language models: /llms.txt

@@ -1,0 +1,146 @@
+/* ==========================================================================
+   MatDrive: the colour of the app, and the few styles that only this app has (prefix mo-).
+   Everything else is the toolkit (matui.css). Literal colours here: the accent and the colours of the four apps (like the office suites people know).
+   The frame of the editors is editor.css, each editor has its own file (docs.css, sheets.css, slides.css, base.css).
+   ========================================================================== */
+
+/* The accent: the orange of the office suites; white text on it 4.6:1. Links use a darker shade (6.3:1 on white), a lighter one on dark surfaces. */
+[data-app="matdrive"] { --mat-app-accent: #d83b01; --mat-app-accent-text: #b23000; }
+:root[data-theme="dark"][data-app="matdrive"] { --mat-app-accent-text: #ff8a5c; }
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]):not([data-theme="dark"])[data-app="matdrive"] { --mat-app-accent-text: #ff8a5c; } }
+
+/* the colours of the four apps (icons, the papers of the start row, the title bar of the editors) */
+:root { --md-docs: #185abd; --md-sheets: #107c41; --md-slides: #c43e1c; --md-base: #a4373a; }
+:root[data-theme="dark"] { --md-docs: #6ea0f0; --md-sheets: #4fbf85; --md-slides: #f08a6c; --md-base: #ec8a8c; }
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]):not([data-theme="dark"]) { --md-docs: #6ea0f0; --md-sheets: #4fbf85; --md-slides: #f08a6c; --md-base: #ec8a8c; } }
+.md-kind--docs { --md-kind: var(--md-docs); }
+.md-kind--sheets { --md-kind: var(--md-sheets); }
+.md-kind--slides { --md-kind: var(--md-slides); }
+.md-kind--base { --md-kind: var(--md-base); }
+.md-kind-icon.mat-icon, .md-kind .mat-icon, .md-name.md-kind--docs .mat-icon, .md-name.md-kind--sheets .mat-icon, .md-name.md-kind--slides .mat-icon, .md-name.md-kind--base .mat-icon,
+.md-kind-dot .mat-icon, .md-features .md-kind-icon.mat-icon { color: var(--md-kind); }
+.md-kind { display: inline-flex; align-items: center; gap: var(--mat-space-2); }
+
+
+.md-muted { color: var(--mat-text-muted); }
+.md-danger { color: var(--mat-danger-text); }
+.md-sep { margin-left: var(--mat-space-3); }
+.md-name { display: inline-flex; align-items: center; gap: var(--mat-space-2); font-weight: 560; }
+.md-block-line { display: block; }
+.md-dl { display: grid; grid-template-columns: max-content 1fr; gap: var(--mat-space-2) var(--mat-space-4); margin: var(--mat-space-4) 0 0; }
+.md-dl dt { color: var(--mat-text-muted); }
+.md-dl dd { margin: 0; display: flex; flex-wrap: wrap; gap: var(--mat-space-1); }
+.md-inline-form { margin-top: var(--mat-space-4); max-width: 520px; }
+.md-center { justify-content: center; }
+
+/* a colour of the model (a part) as a small square or dot */
+.md-swatch { display: inline-block; flex: none; width: 14px; height: 14px; border-radius: 4px; box-shadow: inset 0 0 0 1px var(--mat-border-strong); }
+.md-swatch-dot { display: inline-block; flex: none; width: 10px; height: 10px; border-radius: 50%; box-shadow: inset 0 0 0 1px var(--mat-border-strong); }
+
+/* the copy field of the link: the address and its button in one line */
+.md-copyrow { display: flex; gap: var(--mat-space-2); align-items: stretch; }
+.md-copyrow .mat-input { flex: 1 1 auto; min-width: 0; }
+
+/* the version in the menu is a link to the About page: it looks like the text it was */
+.mat-nav__version a { color: inherit; text-decoration: none; }
+.mat-nav__version a:hover, .mat-nav__version a:focus-visible { color: var(--mat-accent-text); text-decoration: underline; }
+
+/* the About page */
+.md-about { display: grid; gap: var(--mat-space-4); }
+.md-about__head { display: flex; align-items: center; gap: var(--mat-space-4); }
+.md-about__head h2 { margin: 0; }
+.md-about__head p { margin: 0; color: var(--mat-text-muted); }
+
+/* ---- The start page for visitors ----------------------------------------------------------------------------------- */
+.md-landing { max-width: 960px; margin-inline: auto; }
+.md-hero { display: flex; flex-direction: column; align-items: center; text-align: center; gap: var(--mat-space-3); padding: var(--mat-space-8) var(--mat-space-4) var(--mat-space-6); }
+.md-hero h1 { margin: 0; font-size: clamp(2rem, 5vw, 3rem); }
+.md-hero__lead { max-width: 60ch; margin: 0; color: var(--mat-text-muted); font-size: var(--mat-fs-lg); }
+.md-hero__actions { justify-content: center; }
+.md-features { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: var(--mat-space-4); width: 100%; padding: 0 var(--mat-space-4) var(--mat-space-6); }
+.md-features h2 { display: flex; align-items: center; gap: var(--mat-space-2); margin: 0 0 var(--mat-space-2); font-size: var(--mat-fs-md); }
+.md-features p { margin: 0; color: var(--mat-text-muted); }
+
+/* the language switch (EN / DE) under the card of the pages without a menu */
+.md-auth-foot { display: flex; flex-direction: column; align-items: center; gap: var(--mat-space-2); }
+.md-lang { margin: 0; }
+.md-lang .mat-seg__btn { min-width: 44px; }
+
+/* the word mark at the top of the menu: the light one on light surfaces, the dark one in dark mode (explicit, or the system's while the theme is "system") */
+.md-brandmark { display: block; height: 40px; width: auto; }
+.md-brandmark--dark { display: none; }
+:root[data-theme="dark"] .md-brandmark--light { display: none; }
+:root[data-theme="dark"] .md-brandmark--dark { display: block; }
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]):not([data-theme="dark"]) .md-brandmark--light { display: none; }
+  :root:not([data-theme="light"]):not([data-theme="dark"]) .md-brandmark--dark { display: block; }
+}
+
+/* ---- Phones --------------------------------------------------------------------------------------------------------- */
+@media (max-width: 599px) {
+  .md-btn-row { flex-wrap: nowrap; }
+  .mat-page__head { flex-wrap: wrap; }
+  .mat-topbar .mat-crumbs { display: none; }
+  .mat-topbar .mat-topbar__actions { margin-left: auto; }
+}
+
+/* ---- Offline ------------------------------------------------------------------------------------------------------- */
+/* the state in the top bar: "Offline" (a click tries again) */
+.md-offline {
+  display: inline-flex; align-items: center; gap: var(--mat-space-1); height: 32px; padding: 0 var(--mat-space-3);
+  border: 1px solid var(--mat-warning); border-radius: 999px; background: var(--mat-warning-bg); color: var(--mat-warning-text); font: inherit; font-size: var(--mat-fs-xs); cursor: pointer; white-space: nowrap;
+}
+.md-offline[hidden] { display: none; }
+.md-offline .mat-icon { width: 14px; height: 14px; }
+@media (max-width: 599px) { .md-offline [data-offline-text] { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); } .md-offline { padding: 0; width: 32px; justify-content: center; } }
+.md-offline-page .md-offline-icon { width: 40px; height: 40px; color: var(--mat-text-muted); }
+
+/* ---- No zoom on a phone (PWA) -------------------------------------------------------------------------------------- */
+/* iOS zooms into a field whose text is smaller than 16 px as soon as it gets the focus, and a double tap zooms the page:
+   on a touch screen every field has 16 px, a tap is a tap (the pinch zoom of the page stays, for those who need it), and iOS does not enlarge text on its own. */
+html { -webkit-text-size-adjust: 100%; text-size-adjust: 100%; }
+@media (pointer: coarse) {
+  html, body { touch-action: manipulation; }
+  input, textarea, select, .mat-input, .mat-select, .mat-textarea { font-size: max(16px, 1em); }
+}
+
+/* the installed app on iOS: the page reaches under the status bar and the home indicator, the content keeps clear of them */
+@media (display-mode: standalone) {
+  .mat-topbar { padding-top: env(safe-area-inset-top); }
+  .mat-nav { padding-top: env(safe-area-inset-top); padding-bottom: env(safe-area-inset-bottom); }
+  .mat-page { padding-bottom: calc(var(--mat-space-5, 1.5rem) + env(safe-area-inset-bottom)); }
+}
+
+
+/* ---- The start row: a paper per app (or per template), like the start pages of the office suites ----------------- */
+.md-starters { margin-bottom: var(--mat-space-5); }
+.md-starters__title { margin: 0 0 var(--mat-space-3); font-size: var(--mat-fs-md); font-weight: 600; }
+.md-starters__row { display: flex; gap: var(--mat-space-4); overflow-x: auto; padding-bottom: var(--mat-space-2); scroll-snap-type: x proximity; }
+.md-starter { flex: none; margin: 0; scroll-snap-align: start; }
+.md-starter__button { display: flex; flex-direction: column; gap: 4px; width: 148px; padding: 0; border: 0; background: none; color: var(--mat-text); font: inherit; text-align: left; cursor: pointer; text-decoration: none; }
+.md-starter__button:hover { text-decoration: none; }
+.md-starter__paper { position: relative; display: grid; place-items: center; height: 110px; border: 1px solid var(--mat-border); border-radius: var(--mat-radius-sm); background: var(--mat-surface); transition: border-color .15s, box-shadow .15s; }
+.md-starter__paper::before { content: ""; position: absolute; inset: 0 0 auto; height: 6px; border-radius: var(--mat-radius-sm) var(--mat-radius-sm) 0 0; background: var(--md-kind, var(--mat-accent)); }
+.md-starter__button:hover .md-starter__paper, .md-starter__button:focus-visible .md-starter__paper { border-color: var(--md-kind, var(--mat-accent)); box-shadow: var(--mat-shadow-sm); }
+.md-starter__icon.mat-icon { width: 36px; height: 36px; color: var(--md-kind, var(--mat-accent-text)); }
+.md-starter__paper--upload::before { background: var(--mat-text-faint); }
+.md-starter--upload .md-starter__icon.mat-icon { color: var(--mat-text-muted); }
+.md-starter__name { font-weight: 600; font-size: var(--mat-fs-sm); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.md-starter__meta { color: var(--mat-text-muted); font-size: .8125rem; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
+/* ---- The gallery of documents: the picture of the first page / sheet / slide ------------------------------------------ */
+.md-doc-tile { position: relative; }
+.md-doc-tile__link { display: flex; flex-direction: column; color: inherit; text-decoration: none; height: 100%; }
+.md-doc-tile__link:hover { text-decoration: none; }
+.md-doc-tile__media { border-top: 4px solid var(--md-kind); background: var(--mat-surface-2); }
+.md-doc-tile__media img { object-fit: cover; object-position: top; background: #fff; }
+.md-doc-tile__icon.mat-icon { width: 48px; height: 48px; color: var(--md-kind); opacity: .8; }
+.md-doc-tile .mat-tile__title { display: flex; align-items: center; gap: 6px; padding-right: 36px; }
+.md-kind-dot { display: inline-flex; flex: none; }
+.md-kind-dot .mat-icon { width: 16px; height: 16px; }
+.md-doc-tile__star { position: absolute; right: 6px; bottom: 6px; margin: 0; }
+.md-doc-tile__star .is-on .mat-icon, .md-star-mark.mat-icon { color: #e3a008; }
+.md-star-mark.mat-icon { width: 14px; height: 14px; margin-left: 6px; vertical-align: -2px; }
+.md-mt { margin-top: var(--mat-gap, 16px); }
+.md-mb { margin-bottom: var(--mat-gap, 16px); }
+.mat-alert .md-copyrow { margin: var(--mat-space-2) 0; }

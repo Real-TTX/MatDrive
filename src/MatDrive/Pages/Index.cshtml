@@ -1,0 +1,40 @@
+@page "/"
+@model MatDrive.Pages.IndexModel
+@{
+    Layout = "_LayoutAuth";
+    ViewData["Title"] = Ui.AppName;
+    ViewData["Index"] = true;
+    ViewData["AuthClass"] = "md-landing";
+}
+
+<section class="md-hero">
+    @Ui.Logo("lg")
+    <h1>MatDrive</h1>
+    <p class="md-hero__lead">@Html.Raw(L["Landing.Lead"].Value)</p>
+    <div class="mat-btn-row mat-btn-row--plain md-hero__actions">
+        @if (Model.RegistrationOpen)
+        {
+            <a class="mat-btn mat-btn--primary mat-btn--lg" href="/Account/Register">@Ui.Icon("rocket")<span>@L["Landing.Register"]</span></a>
+        }
+        <a class="mat-btn mat-btn--secondary mat-btn--lg" href="/Account/Login">@Ui.Icon("login")<span>@L["Account.Login.Title"]</span></a>
+    </div>
+</section>
+
+<section class="md-features" aria-label="@L["Landing.Features"]">
+    <div class="mat-card"><div class="mat-card__body">
+        <h2>@Ui.Icon("hard-drive")@L["Landing.Drive.Title"]</h2>
+        <p>@L["Landing.Drive.Text"]</p>
+    </div></div>
+    <div class="mat-card"><div class="mat-card__body">
+        <h2>@Ui.Icon("share")@L["Landing.Share.Title"]</h2>
+        <p>@L["Landing.Share.Text"]</p>
+    </div></div>
+    <div class="mat-card"><div class="mat-card__body">
+        <h2>@Ui.Icon("kind-docs")@L["Landing.Office.Title"]</h2>
+        <p>@L["Landing.Office.Text"]</p>
+    </div></div>
+    <div class="mat-card"><div class="mat-card__body">
+        <h2>@Ui.Icon("network")@L["Landing.Locations.Title"]</h2>
+        <p>@L["Landing.Locations.Text"]</p>
+    </div></div>
+</section>

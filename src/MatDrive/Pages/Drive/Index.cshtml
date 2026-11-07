@@ -1,0 +1,187 @@
+@page "/drive/{view?}/{id:long?}"
+@model MatDrive.Pages.Drive.IndexModel
+@using MatDrive.Services.Files
+@{
+    ViewData["Title"] = Model.Title;
+    var trash = Model.Mode == "trash";
+    var inDrive = Model.Mode is "my" or "folder" or "shared-drive";
+    var crumbs = new List<(string, string?)>();
+    if (Model.Mode == "folder")
+    {
+        var root = Model.CurrentDrive!.Kind == DriveKind.Shared ? (Model.CurrentDrive.Name, $"/drive/shared-drive/{Model.CurrentDrive.Id}")
+            : Model.CurrentDrive.OwnerId == Me.Id ? (L["Drive.My"].Value, "/drive") : (L["Drive.SharedWithMe"].Value, "/drive/shared");
+        crumbs.Add((root.Item1, root.Item2));
+        crumbs.AddRange(Model.Path.Select(c => (c.Name, (string?)$"/drive/folder/{c.Id}")));
+    }
+    else
+    {
+        crumbs.Add((Model.Title, null));
+    }
+
+    ViewData["Crumbs"] = crumbs;
+    ViewData["Width"] = "wide";
+    ViewData["PageSub"] = trash ? L["Drive.Trash.Sub"].Value : Model.Mode == "shared" ? L["Drive.SharedWithMe.Sub"].Value : null;
+    var office = System.Text.Json.JsonSerializer.Serialize(Model.OfficeKinds.Select(k => new { k.Kind, k.Name, k.Colour, formats = k.Formats.Where(f => f.Open).Select(f => new { f.Ext, f.Write }) }));
+}
+@inject CurrentUser Me
+
+@section TopActions {
+    @if (Model.Mode == "folder")
+    {
+        <a class="mat-btn mat-btn--secondary mat-btn--icon" href="/drive/item/@Model.Folder!.Id" aria-label="@L["Drive.Details"]" data-tip="@L["Drive.Details"]">@Ui.Icon("info")</a>
+    }
+    @if (Model.Mode == "shared-drive")
+    {
+        <a class="mat-btn mat-btn--secondary mat-btn--icon" href="/drives/edit?id=@Model.CurrentDrive!.Id" aria-label="@L["Drives.Settings"]" data-tip="@L["Drives.Settings"]">@Ui.Icon("settings")</a>
+    }
+}
+
+<div class="md-explorer mat-list" id="md-explorer" data-view-scope data-selectable
+     data-drive="@Model.CurrentDrive!.Id" data-folder="@Model.Folder?.Id" data-mode="@Model.Mode" data-can-add="@(Model.CanAdd ? "true" : "false")" data-office="@office">
+    <partial name="_Toolbar" model="Model.Toolbar" />
+
+    @* what is selected: the actions for several items at once (LIST-07 for many) *@
+    <div class="mat-bulk md-bulk" data-bulk-bar hidden>
+        <span class="mat-bulk__count"><span data-bulk-count>0</span> @L["Drive.Selected"]</span>
+        @if (trash)
+        {
+            <button type="button" class="mat-btn mat-btn--secondary mat-btn--sm" data-act="restore">@Ui.Icon("history")<span>@L["Drive.Restore"]</span></button>
+            <button type="button" class="mat-btn mat-btn--danger mat-btn--sm md-sep" data-act="delete">@Ui.Icon("trash")<span>@L["Drive.DeleteForever"]</span></button>
+        }
+        else
+        {
+            <button type="button" class="mat-btn mat-btn--secondary mat-btn--sm" data-act="download">@Ui.Icon("download")<span>@L["Drive.Download"]</span></button>
+            <button type="button" class="mat-btn mat-btn--secondary mat-btn--sm" data-act="move">@Ui.Icon("folder-move")<span>@L["Drive.Move"]</span></button>
+            <button type="button" class="mat-btn mat-btn--secondary mat-btn--sm" data-act="copy">@Ui.Icon("copy")<span>@L["Drive.Copy"]</span></button>
+            <button type="button" class="mat-btn mat-btn--secondary mat-btn--sm" data-act="star">@Ui.Icon("star")<span>@L["Drive.Star"]</span></button>
+            <button type="button" class="mat-btn mat-btn--danger mat-btn--sm md-sep" data-act="trash">@Ui.Icon("trash")<span>@L["Drive.MoveToTrash"]</span></button>
+        }
+    </div>
+
+    @if (Model.Listing.Items.Count == 0)
+    {
+        var searching = Model.Toolbar.Search is not null || Model.Mode == "search";
+        var (icon, title, text) = Model.Mode switch
+        {
+            "trash" => ("trash", L["Drive.Trash.Empty"].Value, L["Drive.Trash.EmptyText"].Value),
+            "shared" => ("users", L["Drive.Shared.Empty"].Value, L["Drive.Shared.EmptyText"].Value),
+            "recent" => ("clock", L["Drive.Recent.Empty"].Value, L["Drive.Recent.EmptyText"].Value),
+            "starred" => ("star", L["Drive.Starred.Empty"].Value, L["Drive.Starred.EmptyText"].Value),
+            "search" => ("search", L["Lists.NoMatch"].Value, L["Drive.Search.EmptyText"].Value),
+            _ when searching => ("search", L["Lists.NoMatch"].Value, L["Lists.ChangeTools"].Value),
+            _ => ("folder-open", L["Drive.Folder.Empty"].Value, L[Model.CanAdd ? "Drive.Folder.EmptyText" : "Drive.Folder.EmptyReadOnly"].Value),
+        };
+        <div class="md-dropzone-host">
+            <partial name="_Empty" model="@(new EmptyStateModel(icon, title, text, !searching, null, null, Model.Toolbar.UrlReset()))" />
+        </div>
+    }
+    else
+    {
+        <div class="md-dropzone-host" data-view="list">
+            <md-table caption="@Model.Title">
+                <thead>
+                    <tr>
+                        <th scope="col" class="mat-table__check"><input type="checkbox" class="mat-check__input" data-select-all aria-label="@L["Drive.SelectAll"]" /></th>
+                        <th scope="col">@L["Common.Name"]</th>
+                        <th scope="col" class="mat-hide-md">@L[Model.Mode == "shared" ? "Drive.Col.SharedBy" : "Drive.Col.Owner"]</th>
+                        <th scope="col" class="mat-hide-sm">@L[trash ? "Drive.Col.Deleted" : "Drive.Col.Modified"]</th>
+                        @if (!inDrive) { <th scope="col" class="mat-hide-lg">@L["Drive.Col.Location"]</th> }
+                        <th scope="col" class="mat-num mat-hide-sm">@L["Drive.Col.Size"]</th>
+                        <th scope="col"><span class="mat-sr-only">@L["Common.Actions"]</span></th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var n in Model.Listing.Items)
+                    {
+                        var cat = n.Category;
+                        <tr data-node="@n.Id" data-kind="@(n.IsFolder ? "folder" : "file")" data-name="@n.Name" data-category="@cat" data-preview="@(n.IsFolder ? "none" : FileTypes.PreviewOf(n.Name, n.Size))"
+                            data-office="@(Model.OpensInOffice(n) ? "1" : null)" data-starred="@(n.IsStarred ? "1" : null)" data-text="@(n.IsFolder ? null : FileTypes.IsEditableText(n.Name, n.Size) ? "1" : null)" data-drop-folder="@(n.IsFolder && !trash ? n.Id : null)" draggable="@(trash ? "false" : "true")">
+                            <td class="mat-table__check"><input type="checkbox" class="mat-check__input" data-select-row value="@n.Id" aria-label="@L["Drive.SelectNamed", n.Name]" /></td>
+                            <td data-label="@L["Common.Name"]" class="mat-table__primary">
+                                <a class="md-name" href="@(trash ? $"/drive/item/{n.Id}" : IndexModel.HrefOf(n))" data-open>
+                                    <span class="md-ficon md-ficon--@cat">@Ui.Icon(FileTypes.IconOf(cat), null, n.IsFolder ? n.Colour : null)</span>
+                                    <span class="md-name__text">@n.Name</span>
+                                    @if (n.IsShared) { @Ui.Icon("users", "md-mark") }
+                                    @if (n.IsStarred) { @Ui.Icon("star-filled", "md-mark md-mark--star") }
+                                </a>
+                            </td>
+                            <td data-label="@L["Drive.Col.Owner"]" class="mat-hide-md">@(n.OwnerName == Me.DisplayName ? L["Drive.Me"].Value : n.OwnerName)</td>
+                            <td data-label="@L[trash ? "Drive.Col.Deleted" : "Drive.Col.Modified"]" class="mat-mono mat-hide-sm">@Dates.Stamp(trash ? n.TrashedDate ?? n.ModifiedDate : n.ModifiedDate, Model.Zone)</td>
+                            @if (!inDrive) { <td data-label="@L["Drive.Col.Location"]" class="mat-hide-lg">@(n.Location ?? L["Drive.My"].Value)</td> }
+                            <td data-label="@L["Drive.Col.Size"]" class="mat-num mat-mono mat-hide-sm">@(n.IsFolder ? "–" : Ui.Bytes(n.Size))</td>
+                            <td class="mat-table__cell-actions">
+                                <div class="mat-table__actions">
+                                    @if (trash)
+                                    {
+                                        <button type="button" class="mat-btn mat-btn--ghost mat-btn--icon mat-btn--sm" data-row-act="restore" aria-label="@L["Drive.RestoreNamed", n.Name]" data-tip="@L["Drive.Restore"]">@Ui.Icon("history")</button>
+                                        <button type="button" class="mat-btn mat-btn--ghost mat-btn--icon mat-btn--sm md-danger md-sep" data-row-act="delete" aria-label="@L["Drive.DeleteForeverNamed", n.Name]" data-tip="@L["Drive.DeleteForever"]">@Ui.Icon("trash")</button>
+                                    }
+                                    else
+                                    {
+                                        @if (Model.OpensInOffice(n))
+                                        {
+                                            <a class="mat-btn mat-btn--ghost mat-btn--icon mat-btn--sm" href="/office/open/@n.Id" target="_blank" rel="noopener" aria-label="@L["Drive.OpenInOfficeNamed", n.Name]" data-tip="@L["Drive.OpenInOffice"]">@Ui.Icon("external")</a>
+                                        }
+                                        <a class="mat-btn mat-btn--ghost mat-btn--icon mat-btn--sm" href="/drive/item/@n.Id/sharing" aria-label="@L["Drive.ShareNamed", n.Name]" data-tip="@L["Drive.Share"]">@Ui.Icon("share")</a>
+                                        <button type="button" class="mat-btn mat-btn--ghost mat-btn--icon mat-btn--sm" data-row-menu aria-haspopup="menu" aria-label="@L["Drive.MoreNamed", n.Name]" data-tip="@L["Drive.More"]">@Ui.Icon("more-vertical")</button>
+                                    }
+                                </div>
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </md-table>
+        </div>
+
+        <div class="md-dropzone-host" data-view="gallery" hidden>
+            <div class="mat-gallery md-gallery">
+                @foreach (var n in Model.Listing.Items)
+                {
+                    var cat = n.Category;
+                    var thumb = !n.IsFolder && cat == "image" && n.Size <= 8 * 1024 * 1024 && FileTypes.PreviewOf(n.Name, n.Size) == "image";
+                    <div class="mat-tile md-tile" data-select-item data-node="@n.Id" data-kind="@(n.IsFolder ? "folder" : "file")" data-name="@n.Name" data-category="@cat"
+                         data-preview="@(n.IsFolder ? "none" : FileTypes.PreviewOf(n.Name, n.Size))" data-office="@(Model.OpensInOffice(n) ? "1" : null)" data-starred="@(n.IsStarred ? "1" : null)"
+                         data-text="@(n.IsFolder ? null : FileTypes.IsEditableText(n.Name, n.Size) ? "1" : null)" data-drop-folder="@(n.IsFolder && !trash ? n.Id : null)" draggable="@(trash ? "false" : "true")">
+                        <a class="md-tile__link" href="@(trash ? $"/drive/item/{n.Id}" : IndexModel.HrefOf(n))" data-open>
+                            <span class="mat-tile__media md-tile__media md-ficon--@cat">
+                                @if (thumb)
+                                {
+                                    <img src="/files/@n.Id/content" alt="" loading="lazy" width="320" height="240" draggable="false" />
+                                }
+                                else
+                                {
+                                    @Ui.Icon(FileTypes.IconOf(cat), "md-tile__icon", n.IsFolder ? n.Colour : null)
+                                }
+                            </span>
+                            <span class="mat-tile__body">
+                                <span class="mat-tile__title">@n.Name</span>
+                                <span class="mat-tile__meta">@(n.IsFolder ? L["Types.folder"].Value : Ui.Bytes(n.Size)) · @Dates.Stamp(n.ModifiedDate, Model.Zone)</span>
+                            </span>
+                        </a>
+                        <input type="checkbox" class="mat-check__input md-tile__check" data-select-row value="@n.Id" aria-label="@L["Drive.SelectNamed", n.Name]" />
+                    </div>
+                }
+            </div>
+        </div>
+    }
+
+    <partial name="_Pager" model="Model.Pager" />
+
+    <div class="mat-actions">
+        @if (Model.CanAdd)
+        {
+            <button type="button" class="mat-btn mat-btn--primary" data-new="files">@Ui.Icon("upload")<span>@L["Drive.UploadFiles"]</span></button>
+            <button type="button" class="mat-btn mat-btn--secondary" data-new="folder">@Ui.Icon("folder-plus")<span>@L["Drive.NewFolder"]</span></button>
+            <button type="button" class="mat-btn mat-btn--secondary mat-hide-sm" data-new="dir">@Ui.Icon("folder-upload")<span>@L["Drive.UploadFolder"]</span></button>
+        }
+        @if (trash && Model.Listing.Total > 0)
+        {
+            <span class="mat-btn-row__spacer"></span>
+            <button type="button" class="mat-btn mat-btn--danger" data-act="empty-trash">@Ui.Icon("trash")<span>@L["Drive.EmptyTrash"]</span></button>
+        }
+    </div>
+</div>
+
+@section Scripts {
+    <script type="module" src="~/js/explorer.js" asp-append-version="true"></script>
+}

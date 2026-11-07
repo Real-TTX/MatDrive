@@ -1,0 +1,35 @@
+<!DOCTYPE html>
+<html lang="en" data-app="matdrive">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <meta name="color-scheme" content="light dark" />
+  <meta name="theme-color" content="#f5f4f1" media="(prefers-color-scheme: light)" />
+  <meta name="theme-color" content="#151514" media="(prefers-color-scheme: dark)" />
+  <meta name="robots" content="noindex" />
+  <title>MatDrive · Offline</title>
+  <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+  <link rel="stylesheet" href="/matui/matui.css" />
+  <link rel="stylesheet" href="/css/app.css" />
+</head>
+<body>
+  <!-- Shown by the service worker when a page cannot be loaded. It tries again by itself as soon as the network is back (offline.js), and by the button.
+       The texts are in English and German; offline.js shows the language the app had. -->
+  <main class="mat-auth md-offline-page" id="md-offline-page">
+    <div class="mat-auth__card">
+      <div class="mat-auth__brand">
+        <img class="md-brandmark md-brandmark--light" src="/img/logo/matdrive-logo.svg" alt="MatDrive" width="166" height="40" />
+        <img class="md-brandmark md-brandmark--dark" src="/img/logo/matdrive-logo-dark.svg" alt="MatDrive" width="166" height="40" />
+        <h1>Offline</h1>
+        <p class="mat-muted" lang="en">No connection. Documents you opened before can still be shown; everything else needs the network. This page tries again by itself as soon as the network is back.</p>
+        <p class="mat-muted" lang="de">Keine Verbindung. Dokumente, die du schon geöffnet hattest, werden weiter angezeigt; alles andere braucht das Netz. Diese Seite versucht es von selbst erneut, sobald das Netz zurück ist.</p>
+      </div>
+      <p class="mat-muted md-center" id="md-retry-status" role="status" hidden><span lang="en">Still no connection.</span><span lang="de">Noch keine Verbindung.</span></p>
+      <div class="mat-btn-row mat-btn-row--plain md-center">
+        <button type="button" class="mat-btn mat-btn--primary" id="md-retry"><span lang="en">Try again</span><span lang="de">Erneut versuchen</span></button>
+      </div>
+    </div>
+  </main>
+  <script src="/js/offline.js"></script>
+</body>
+</html>

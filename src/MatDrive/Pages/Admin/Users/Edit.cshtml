@@ -1,0 +1,23 @@
+@page "/Admin/Users/Edit"
+@model MatDrive.Pages.Admin.Users.EditModel
+@{
+    ViewData["Title"] = Model.IsNew ? L["Users.New"].Value : Model.DisplayName;
+    ViewData["Crumbs"] = new List<(string, string?)> { (L["Admin.Title"].Value, null), (L["Users.Title"].Value, "/Admin/Users"), (Model.IsNew ? L["Common.New"].Value : Model.DisplayName, null) };
+    ViewData["Width"] = "narrow";
+}
+
+<form class="mat-form" method="post" novalidate>
+    <partial name="_FormSummary" model="ViewData.ModelState" />
+    <div class="mat-card">
+        <div class="mat-card__body mat-form">
+            <md-field name="DisplayName" label="@L["Account.Name"]" required value="@Model.DisplayName" maxlength="120" msg-required="@L["Account.Name.Required"]" />
+            <md-field name="Email" kind="email" label="@L["Account.Email"]" required value="@Model.Email" autocomplete="off" msg-required="@L["Account.Login.Email.Required"]" />
+            <md-field name="Role" kind="radios" label="@L["Users.Col.Role"]" value="@Model.Role" options="Model.Roles" />
+            <md-field name="IsActive" kind="switch" label="@L["Users.CanSignIn"]" value="@Model.IsActive.ToString()" />
+            <md-field name="Password" kind="password" label="@L[Model.IsNew ? "Account.Password" : "Password.New"]" required="@Model.IsNew" optional="@(!Model.IsNew)" autocomplete="new-password"
+                      hint="@(Model.IsNew ? L["Account.Password.Hint", PasswordService.MinLength].Value : L["Users.Password.Hint"].Value)" />
+        </div>
+    </div>
+    <md-buttons save="@L[Model.IsNew ? "Users.Create" : "Common.Save"]" back="/Admin/Users" delete-handler="@(Model.IsNew || Model.IsSelf ? null : "Delete")" delete-label="@L["Users.Delete"]"
+                delete-confirm="@L["Users.DeleteConfirm", Model.DisplayName]" />
+</form>

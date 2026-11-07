@@ -1,0 +1,42 @@
+@page "/Admin/Users"
+@model MatDrive.Pages.Admin.Users.IndexModel
+@{
+    ViewData["Title"] = L["Users.Title"].Value;
+    ViewData["Crumbs"] = new List<(string, string?)> { (L["Admin.Title"].Value, null), (L["Users.Title"].Value, null) };
+}
+
+<div class="mat-list">
+    <partial name="_Toolbar" model="Model.Toolbar" />
+
+    @if (Model.Items.Count == 0)
+    {
+        <partial name="_Empty" model="@(new EmptyStateModel("user-circle", L[Model.Toolbar.Total == 0 ? "Users.NoMatch" : "Users.NoMatch"].Value, L[Model.Toolbar.Total == 0 ? "Lists.ChangeTools" : "Lists.ChangeTools"].Value, Model.Toolbar.Total == 0, "/Admin/Users/Edit", L["Users.New"].Value, Model.Toolbar.UrlReset()))" />
+    }
+    else
+    {
+        <md-table caption="@L["Users.Title"]">
+            <thead>
+                <tr><th scope="col">@L["Users.Col.User"]</th><th scope="col">@L["Users.Col.Role"]</th><th scope="col">@L["Common.Status"]</th><th scope="col" class="mat-hide-md">@L["Users.Col.LastLogin"]</th><th scope="col" class="mat-num mat-hide-sm">@L["System.Used"]</th><th scope="col"><span class="mat-sr-only">@L["Common.Actions"]</span></th></tr>
+            </thead>
+            <tbody>
+                @foreach (var u in Model.Items)
+                {
+                    <tr>
+                        <td data-label="@L["Users.Col.User"]"><div class="mat-table__name"><span class="mat-avatar mat-avatar--sm" aria-hidden="true">@Ui.Initials(u.DisplayName)</span><span><a href="/Admin/Users/Edit?id=@u.Id">@u.DisplayName</a><small class="mat-mono">@u.Email</small></span></div></td>
+                        <td data-label="@L["Users.Col.Role"]"><span class="mat-pill @(u.Role == UserRole.Admin ? "mat-pill--accent" : "mat-pill--plain")">@L[u.Role == UserRole.Admin ? "Common.Role.Admin" : "Common.Role.User"]</span></td>
+                        <td data-label="@L["Common.Status"]">@if (!u.IsActive) { <span class="mat-pill mat-pill--error">@L["Users.Disabled"]</span> } else if (u.Locked) { <span class="mat-pill mat-pill--warn">@L["Users.Locked"]</span> } else { <span class="mat-pill mat-pill--ok">@L["Common.Active"]</span> }</td>
+                        <td data-label="@L["Users.Col.LastLogin"]" class="mat-mono mat-hide-md">@(u.LastLogin is null ? L["Common.Never"].Value : Dates.Stamp(u.LastLogin, Model.Zone))</td>
+                        <td data-label="@L["System.Used"]" class="mat-num mat-mono mat-hide-sm">@Ui.Bytes(u.UsedBytes)</td>
+                        <td class="mat-table__cell-actions"><div class="mat-table__actions"><a class="mat-btn mat-btn--ghost mat-btn--icon mat-btn--sm" href="/Admin/Users/Edit?id=@u.Id" aria-label="@L["Common.EditNamed", u.DisplayName]" data-tip="@L["Common.Edit"]">@Ui.Icon("edit")</a></div></td>
+                    </tr>
+                }
+            </tbody>
+        </md-table>
+    }
+
+    <partial name="_Pager" model="Model.Pager" />
+
+    <div class="mat-actions">
+        <a class="mat-btn mat-btn--primary" href="/Admin/Users/Edit">@Ui.Icon("plus")<span>@L["Users.New"]</span></a>
+    </div>
+</div>

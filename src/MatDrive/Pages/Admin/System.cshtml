@@ -1,0 +1,55 @@
+@page "/Admin/System"
+@model MatDrive.Pages.Admin.SystemModel
+@{
+    ViewData["Title"] = L["System.Title"].Value;
+    ViewData["Crumbs"] = new List<(string, string?)> { (L["Admin.Title"].Value, null), (L["System.Title"].Value, null) };
+}
+
+<div class="mat-cols">
+    <div class="mat-col-12 mat-col-lg-7">
+        <form class="mat-form" method="post" novalidate>
+            <partial name="_FormSummary" model="ViewData.ModelState" />
+            <div class="mat-card">
+                <div class="mat-card__head"><h2 class="mat-card__title">@Ui.Icon("settings")@L["System.Settings"]</h2></div>
+                <div class="mat-card__body mat-form">
+                    <md-field name="RegistrationOpen" kind="switch" label="@L["System.RegistrationOpen"]" value="@Model.RegistrationOpen.ToString()" hint="@L["System.RegistrationOpen.Hint"]" />
+                    <md-field name="PublicUrl" kind="url" label="@L["System.PublicUrl"]" value="@Model.PublicUrl" placeholder="https://drive.example.com" optional hint="@L["System.PublicUrl.Hint"]" />
+                </div>
+            </div>
+            <div class="mat-card">
+                <div class="mat-card__head"><h2 class="mat-card__title">@Ui.Icon("hard-drive")@L["System.Storage"]</h2></div>
+                <div class="mat-card__body mat-form">
+                    <md-field name="DefaultQuotaGb" kind="number" label="@L["System.DefaultQuota"]" value="@Model.DefaultQuotaGb" min="0" hint="@L["System.DefaultQuota.Hint"]" />
+                    <md-field name="MaxUploadMb" kind="number" label="@L["System.MaxUpload"]" value="@Model.MaxUploadMb" min="0" hint="@L["System.MaxUpload.Hint"]" />
+                    <md-field name="TrashDays" kind="number" label="@L["System.TrashDays"]" value="@Model.TrashDays" min="1" max="3650" hint="@L["System.TrashDays.Hint"]" />
+                    <md-field name="VersionDays" kind="number" label="@L["System.VersionDays"]" value="@Model.VersionDays" min="0" max="36500" hint="@L["System.VersionDays.Hint"]" />
+                </div>
+            </div>
+            <md-buttons save="@L["Common.Save"]" back="/drive" />
+        </form>
+        <form method="post" asp-page-handler="CleanUp" class="md-mt">
+            <button type="submit" class="mat-btn mat-btn--secondary" data-confirm="@L["System.CleanUp.Confirm"]" data-confirm-ok="@L["System.CleanUp"]">@Ui.Icon("broom")<span>@L["System.CleanUp"]</span></button>
+        </form>
+    </div>
+    <div class="mat-col-12 mat-col-lg-5">
+        <div class="mat-card">
+            <div class="mat-card__head"><h2 class="mat-card__title">@Ui.Icon("info")@L["System.About"]</h2></div>
+            <div class="mat-card__body">
+                <dl class="md-dl">
+                    <dt>@L["System.Version"]</dt><dd class="mat-mono">@AppInfo.Version</dd>
+                    <dt>@L["System.Database"]</dt><dd class="mat-mono">@Model.Database</dd>
+                    <dt>@L["Users.Title"]</dt><dd>@Model.Counts.Users</dd>
+                    <dt>@L["System.Files"]</dt><dd>@Model.Counts.Files</dd>
+                    <dt>@L["System.Folders"]</dt><dd>@Model.Counts.Folders</dd>
+                    <dt>@L["System.Used"]</dt><dd>@Ui.Bytes(Model.Counts.UsedBytes)</dd>
+                    <dt>@L["System.Free"]</dt><dd>@(Model.Counts.FreeBytes < 0 ? "–" : Ui.Bytes(Model.Counts.FreeBytes))</dd>
+                    <dt>@L["Drive.SharedDrives"]</dt><dd>@Model.Counts.SharedDrives</dd>
+                    <dt>@L["System.SharedItems"]</dt><dd>@Model.Counts.SharedItems</dd>
+                    <dt>@L["System.Links"]</dt><dd>@Model.Counts.Links</dd>
+                    <dt>@L["Locations.Title"]</dt><dd>@Model.Counts.Locations</dd>
+                    <dt>@L["System.Mail"]</dt><dd>@(Model.MailText ?? L["System.Mail.Off"].Value)</dd>
+                </dl>
+            </div>
+        </div>
+    </div>
+</div>

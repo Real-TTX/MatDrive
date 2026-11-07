@@ -1,0 +1,4 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 160 40" width="160" height="40" role="img" aria-label="MatDrive">
+  <rect x="2" y="2" width="36" height="36" rx="8" fill="#8E24AA"/><g transform="translate(2 2) scale(0.5625)"><path d="M10.00 20.00a4.00 4.00 0 0 1 4.00-4.00H25.00l4.00 5.00H50.00a4.00 4.00 0 0 1 4.00 4.00V48.00a4.00 4.00 0 0 1-4.00 4.00H14.00a4.00 4.00 0 0 1-4.00-4.00z" fill="#fff"/><rect x="17" y="30" width="30" height="5" rx="2.5" fill="#E9D2F0"/><rect x="17" y="39" width="20" height="5" rx="2.5" fill="#8E24AA"/></g>
+  <text x="48" y="28.5" font-family="'Segoe UI','Helvetica Neue',Arial,sans-serif" font-size="22" font-weight="700" letter-spacing="-0.4" fill="#1F1E1B">Mat<tspan fill="#8E24AA">Drive</tspan></text>
+</svg>

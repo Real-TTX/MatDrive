@@ -1,0 +1,29 @@
+@page "/drive/edit/{id:long}"
+@model MatDrive.Pages.Drive.EditModel
+@{
+    ViewData["PageSub"] = L[Model.Access.CanEdit ? "Editor.Sub" : "Editor.SubReadOnly"].Value;
+}
+
+<div class="md-editor" id="md-editor" data-id="@Model.Id" data-can-edit="@(Model.Access.CanEdit ? "true" : "false")" data-language="@Model.Language">
+    <div class="mat-toolbar md-editor__bar">
+        @if (Model.Access.CanEdit)
+        {
+            <button type="button" class="mat-btn mat-btn--primary mat-btn--sm" data-editor-save disabled>@Ui.Icon("save")<span>@L["Common.Save"]</span></button>
+        }
+        <label class="mat-check md-editor__wrap"><input type="checkbox" class="mat-check__input" data-editor-wrap /><span class="mat-check__label">@L["Editor.Wrap"]</span></label>
+        <span class="md-editor__state" data-editor-state role="status"></span>
+        <span class="md-editor__pos md-muted" data-editor-pos></span>
+    </div>
+    <label class="mat-sr-only" for="md-editor-text">@Model.Node.Name</label>
+    <textarea class="md-editor__area" id="md-editor-text" spellcheck="false" autocapitalize="off" autocomplete="off" readonly="@(!Model.Access.CanEdit)"></textarea>
+</div>
+
+<div class="mat-btn-row">
+    <a class="mat-btn mat-btn--secondary" href="@Model.FolderUrl">@Ui.Icon("back")<span>@L["Common.Back"]</span></a>
+    <a class="mat-btn mat-btn--secondary" href="/files/@Model.Id/content?download=true">@Ui.Icon("download")<span>@L["Drive.Download"]</span></a>
+    <a class="mat-btn mat-btn--secondary" href="/drive/item/@Model.Id/versions">@Ui.Icon("history")<span>@L["Item.Tab.Versions"]</span></a>
+</div>
+
+@section Scripts {
+    <script type="module" src="~/js/edit.js" asp-append-version="true"></script>
+}

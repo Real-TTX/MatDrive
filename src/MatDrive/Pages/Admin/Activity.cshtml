@@ -1,0 +1,42 @@
+@page "/Admin/Activity"
+@model MatDrive.Pages.Admin.ActivityModel
+@{
+    ViewData["Title"] = L["Activity.Title"].Value;
+    ViewData["PageSub"] = L["Activity.Sub"].Value;
+    ViewData["Crumbs"] = new List<(string, string?)> { (L["Admin.Title"].Value, null), (L["Activity.Title"].Value, null) };
+}
+
+<div class="mat-list">
+    <partial name="_Toolbar" model="Model.Toolbar" />
+    @if (Model.Items.Count == 0)
+    {
+        <partial name="_Empty" model="@(new EmptyStateModel("activity", L["Activity.Empty"].Value, L["Activity.EmptyText"].Value, Model.Toolbar.Search is null, null, null, Model.Toolbar.UrlReset()))" />
+    }
+    else
+    {
+        <md-table caption="@L["Activity.Title"]">
+            <thead><tr><th scope="col">@L["Activity.Col.Date"]</th><th scope="col">@L["Activity.Col.Who"]</th><th scope="col">@L["Activity.Col.What"]</th><th scope="col" class="mat-hide-sm">@L["Activity.Col.Item"]</th></tr></thead>
+            <tbody>
+                @foreach (var a in Model.Items)
+                {
+                    <tr>
+                        <td data-label="@L["Activity.Col.Date"]" class="mat-mono">@Dates.Stamp(a.Date, Model.Zone)</td>
+                        <td data-label="@L["Activity.Col.Who"]">@(a.UserName ?? L["Activity.Someone"].Value)</td>
+                        <td data-label="@L["Activity.Col.What"]">@L["Activity.Action." + a.Action]@if (!string.IsNullOrEmpty(a.Detail)) { <small class="md-muted md-block-line">@a.Detail</small> }</td>
+                        <td data-label="@L["Activity.Col.Item"]" class="mat-hide-sm">
+                            @if (a.NodeId is { } nid)
+                            {
+                                <span>@a.Target</span>
+                            }
+                            else
+                            {
+                                @a.Target
+                            }
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </md-table>
+    }
+    <partial name="_Pager" model="Model.Pager" />
+</div>

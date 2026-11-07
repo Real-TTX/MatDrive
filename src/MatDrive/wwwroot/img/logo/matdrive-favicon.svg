@@ -1,0 +1,5 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32" role="img" aria-label="MatDrive">
+  <rect width="32" height="32" rx="7" fill="#8E24AA"/>
+  <path d="M5 10.5A2.5 2.5 0 0 1 7.5 8H12l2 2.5h10.5A2.5 2.5 0 0 1 27 13v9.5a2.5 2.5 0 0 1-2.5 2.5h-17A2.5 2.5 0 0 1 5 22.5z" fill="#fff"/>
+  <rect x="9" y="17.5" width="11" height="3" rx="1.5" fill="#8E24AA"/>
+</svg>

@@ -228,6 +228,41 @@ public static class FileEndpoints
             };
         });
 
+        // a new version of a file from a file of the device (the tab "Versions")
+        live.MapPut("/version/{id:long}", async (long id, HttpContext http, AppDbContext db, BlobStore store, CurrentUser me) =>
+        {
+            var (status, node, version) = await FileService.WriteAsync(db, store, Actor.Of(me.RequiredId), id, http.Request.Body, "upload", ct: http.RequestAborted);
+            return status switch
+            {
+                WriteStatus.Written => Results.Json(new { version = version!.Number }, Json),
+                WriteStatus.QuotaFull => Problem(Text.T("Files.QuotaFull")),
+                WriteStatus.TooLarge => Problem(Text.T("Files.TooLarge")),
+                _ => Results.NotFound(),
+            };
+        }).DisableRequestSizeLimitFor();
+
+        // the suggestions of the search in the top bar (MatUi search: groups of items)
+        live.MapGet("/suggest", async (string? q, int? limit, HttpContext http, AppDbContext db, CurrentUser me) =>
+        {
+            var text = (q ?? string.Empty).Trim();
+            if (text.Length < 2)
+            {
+                return Results.Json(new { groups = Array.Empty<object>() }, Json);
+            }
+
+            var rows = await NodeInfo.SuggestAsync(db, me.RequiredId, text, Math.Clamp(limit ?? 8, 1, 20), http.RequestAborted);
+            var items = rows.Select(n => new
+            {
+                title = n.Name,
+                text = n.Location ?? Text.T("Drive.My"),
+                href = n.IsFolder ? $"/drive/folder/{n.Id}" : $"/drive/item/{n.Id}",
+                icon = FileTypes.IconOf(n.Category),
+                kind = n.Category,
+                id = n.Id.ToString(System.Globalization.CultureInfo.InvariantCulture),
+            });
+            return Results.Json(new { groups = new[] { new { name = Text.T("Drive.Search.Group"), items } } }, Json);
+        });
+
         // ---- MatOffice ----------------------------------------------------------------------------------------------------------
         live.MapPost("/office/new", async (OfficeNewRequest body, HttpContext http, AppDbContext db, BlobStore store, IDataProtectionProvider protection, IHttpClientFactory clients, CurrentUser me) =>
         {

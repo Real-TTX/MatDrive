@@ -1,0 +1,19 @@
+@page "/office/open/{id:long}"
+@model MatDrive.Pages.Office.OpenModel
+@{
+    Layout = "_LayoutAuth";
+    ViewData["Title"] = L["Office.OpenFailed"].Value;
+}
+
+<div class="mat-auth__card">
+    <div class="mat-auth__brand">
+        @Ui.Logo("lg")
+        <h1>@L["Office.OpenFailed"]</h1>
+        <p class="mat-muted">@Model.Problem</p>
+    </div>
+    <div class="mat-btn-row mat-btn-row--plain">
+        <a class="mat-btn mat-btn--primary" href="/office/open/@Model.Id">@Ui.Icon("refresh")<span>@L["Office.TryAgain"]</span></a>
+        <a class="mat-btn mat-btn--secondary" href="/files/@Model.Id/content?download=true">@Ui.Icon("download")<span>@L["Drive.Download"]</span></a>
+        <a class="mat-btn mat-btn--secondary" href="/drive/item/@Model.Id">@Ui.Icon("back")<span>@L["Common.Back"]</span></a>
+    </div>
+</div>

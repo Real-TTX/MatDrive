@@ -1,0 +1,20 @@
+@model MatDrive.Pages.Drive.Item.ItemPageModel
+@*
+    The areas of one file or folder (UI rule: an entity with several areas has tabs), each a page of its own:
+    General (everybody), Sharing (managers), Versions (files), Activity (everybody).
+*@
+@{
+    var active = ViewData["Tab"] as string ?? "general";
+}
+<md-tabs label="@L["Item.Tabs"]">
+    <md-tab href="/drive/item/@Model.Id" active="@(active == "general")">@L["Item.Tab.General"]</md-tab>
+    @if (Model.Access.CanShare)
+    {
+        <md-tab href="/drive/item/@Model.Id/sharing" active="@(active == "sharing")">@L["Item.Tab.Sharing"]</md-tab>
+    }
+    @if (!Model.IsFolder)
+    {
+        <md-tab href="/drive/item/@Model.Id/versions" active="@(active == "versions")">@L["Item.Tab.Versions"]</md-tab>
+    }
+    <md-tab href="/drive/item/@Model.Id/activity" active="@(active == "activity")">@L["Item.Tab.Activity"]</md-tab>
+</md-tabs>

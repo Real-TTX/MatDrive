@@ -1,0 +1,74 @@
+@page "/drive/item/{id:long}/versions"
+@model MatDrive.Pages.Drive.Item.VersionsModel
+@{
+    ViewData["Tab"] = "versions";
+    ViewData["PageSub"] = L["Versions.Sub"].Value;
+    var canEdit = Model.Access.CanEdit && !Model.Node.InTrash;
+}
+
+<partial name="_ItemTabs" model="Model" />
+
+<div class="mat-list">
+    <md-table caption="@L["Item.Tab.Versions"]">
+        <thead>
+            <tr>
+                <th scope="col">@L["Versions.Col.Version"]</th>
+                <th scope="col">@L["Versions.Col.Date"]</th>
+                <th scope="col" class="mat-hide-sm">@L["Versions.Col.By"]</th>
+                <th scope="col" class="mat-hide-md">@L["Versions.Col.Source"]</th>
+                <th scope="col" class="mat-num">@L["Drive.Col.Size"]</th>
+                <th scope="col"><span class="mat-sr-only">@L["Common.Actions"]</span></th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var v in Model.Items)
+            {
+                <tr>
+                    <td data-label="@L["Versions.Col.Version"]" class="mat-table__primary">
+                        <span class="md-name">@Ui.Icon(v.IsCurrent ? "check-circle" : "version")<span>@L["Versions.Number", v.Number]</span></span>
+                        @if (v.IsCurrent) { <span class="mat-pill mat-pill--accent">@L["Versions.Current"]</span> }
+                        @if (v.KeepForever) { <span class="mat-pill mat-pill--plain">@Ui.Icon("lock")@L["Versions.KeptBadge"]</span> }
+                    </td>
+                    <td data-label="@L["Versions.Col.Date"]" class="mat-mono mat-table__keep-label">@Dates.Stamp(v.CreateDate, Model.Zone)</td>
+                    <td data-label="@L["Versions.Col.By"]" class="mat-hide-sm">@(v.CreatedBy ?? "–")</td>
+                    <td data-label="@L["Versions.Col.Source"]" class="mat-hide-md">@L["Versions.Source." + v.Source]</td>
+                    <td data-label="@L["Drive.Col.Size"]" class="mat-num mat-mono">@Ui.Bytes(v.Size)</td>
+                    <td class="mat-table__cell-actions">
+                        <div class="mat-table__actions">
+                            <a class="mat-btn mat-btn--ghost mat-btn--icon mat-btn--sm" href="/files/@Model.Id/content?v=@v.Id&download=true" aria-label="@L["Versions.DownloadNamed", v.Number]" data-tip="@L["Drive.Download"]">@Ui.Icon("download")</a>
+                            @if (canEdit)
+                            {
+                                <form method="post" asp-page-handler="Keep" asp-route-id="@Model.Id" asp-route-versionId="@v.Id" asp-route-keep="@(!v.KeepForever)">
+                                    <button type="submit" class="mat-btn mat-btn--ghost mat-btn--icon mat-btn--sm" aria-pressed="@(v.KeepForever ? "true" : "false")" aria-label="@L[v.KeepForever ? "Versions.Unkeep" : "Versions.Keep"]" data-tip="@L[v.KeepForever ? "Versions.Unkeep" : "Versions.Keep"]">@Ui.Icon("lock")</button>
+                                </form>
+                                @if (!v.IsCurrent)
+                                {
+                                    <form method="post" asp-page-handler="Restore" asp-route-id="@Model.Id" asp-route-versionId="@v.Id">
+                                        <button type="submit" class="mat-btn mat-btn--ghost mat-btn--icon mat-btn--sm" aria-label="@L["Versions.RestoreNamed", v.Number]" data-tip="@L["Versions.Restore"]"
+                                                data-confirm="@L["Versions.RestoreConfirm", v.Number]" data-confirm-ok="@L["Versions.Restore"]">@Ui.Icon("history")</button>
+                                    </form>
+                                    <form method="post" asp-page-handler="Delete" asp-route-id="@Model.Id" asp-route-versionId="@v.Id" class="md-sep">
+                                        <button type="submit" class="mat-btn mat-btn--ghost mat-btn--icon mat-btn--sm md-danger" aria-label="@L["Versions.DeleteNamed", v.Number]" data-tip="@L["Versions.Delete"]"
+                                                data-confirm="@L["Versions.DeleteConfirm", v.Number]" data-confirm-ok="@L["Versions.Delete"]">@Ui.Icon("trash")</button>
+                                    </form>
+                                }
+                            }
+                        </div>
+                    </td>
+                </tr>
+            }
+        </tbody>
+    </md-table>
+
+    <div class="mat-actions">
+        @if (canEdit)
+        {
+            <button type="button" class="mat-btn mat-btn--primary" data-upload-version="@Model.Id" data-name="@Model.Node.Name">@Ui.Icon("upload")<span>@L["Versions.Upload"]</span></button>
+        }
+        <a class="mat-btn mat-btn--secondary" href="@Model.FolderUrl">@Ui.Icon("back")<span>@L["Common.Back"]</span></a>
+    </div>
+</div>
+
+@section Scripts {
+    <script type="module" src="~/js/item.js" asp-append-version="true"></script>
+}

@@ -12,10 +12,11 @@ public sealed record UserCriteria(string? Search, string? Role, string? State, s
 
 public sealed record UserList(List<UserRow> Items, int Total, int Matching);
 
-public sealed record UserDetail(long Id, string DisplayName, string Email, UserRole Role, bool IsActive);
+public sealed record UserDetail(long Id, string DisplayName, string Email, UserRole Role, bool IsActive, long? QuotaBytes);
 
 /// <summary>The form of an account as it comes from the page (not yet checked).</summary>
-public sealed record UserInput(string DisplayName, string Email, UserRole Role, bool IsActive, string Password);
+/// <summary>What the edit page of a user sends; <see cref="QuotaBytes"/> null = the default of the installation, 0 = no limit.</summary>
+public sealed record UserInput(string DisplayName, string Email, UserRole Role, bool IsActive, string Password, long? QuotaBytes = null);
 
 /// <summary>The outcome of saving an account: the errors by field, or what the page has to do afterwards.</summary>
 public sealed record UserSaved(List<FieldError> Errors, bool Found = true, bool Denied = false, bool EndSessions = false);
@@ -106,7 +107,7 @@ public static class UserAdmin
         }
 
         return await db.Users.AsNoTracking().Where(u => u.Id == id)
-            .Select(u => new UserDetail(u.Id, u.DisplayName, u.Email, u.Role, u.IsActive))
+            .Select(u => new UserDetail(u.Id, u.DisplayName, u.Email, u.Role, u.IsActive, u.QuotaBytes))
             .FirstOrDefaultAsync(ct);
     }
 
@@ -124,6 +125,7 @@ public static class UserAdmin
         }
 
         created.IsActive = input.IsActive;
+        created.QuotaBytes = input.QuotaBytes is >= 0 ? input.QuotaBytes : null;
         await db.SaveChangesAsync(ct);
         return (created, []);
     }
@@ -176,6 +178,7 @@ public static class UserAdmin
         user.Email = email;
         user.Role = Enum.IsDefined(input.Role) ? input.Role : UserRole.User;
         user.IsActive = input.IsActive;
+        user.QuotaBytes = input.QuotaBytes is >= 0 ? input.QuotaBytes : null;
         var newPassword = !string.IsNullOrEmpty(input.Password);
         if (newPassword)
         {

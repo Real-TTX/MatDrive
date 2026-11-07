@@ -22,6 +22,9 @@ public sealed class EditModel(AppDbContext db, AccountService accounts, Password
 
     [BindProperty] public string Password { get; set; } = string.Empty;
 
+    /// <summary>The space of My Drive in GB; empty = the default of the installation, 0 = no limit.</summary>
+    [BindProperty] public string QuotaGb { get; set; } = string.Empty;
+
     public bool IsNew => Id is null;
 
     public bool IsSelf => Id == UserId;
@@ -41,6 +44,7 @@ public sealed class EditModel(AppDbContext db, AccountService accounts, Password
             Email = user.Email;
             Role = user.Role;
             IsActive = user.IsActive;
+            QuotaGb = user.QuotaBytes is { } q ? (q / (1024L * 1024 * 1024)).ToString(System.Globalization.CultureInfo.InvariantCulture) : string.Empty;
         }
 
         return Page();
@@ -48,7 +52,7 @@ public sealed class EditModel(AppDbContext db, AccountService accounts, Password
 
     public async Task<IActionResult> OnPostAsync()
     {
-        var input = new UserInput(DisplayName, Email, Role, IsActive, Password);
+        var input = new UserInput(DisplayName, Email, Role, IsActive, Password, long.TryParse(QuotaGb, out var gb) && gb >= 0 ? gb * 1024L * 1024 * 1024 : null);
         if (Id is not { } id)
         {
             var (created, errors) = await UserAdmin.CreateAsync(db, accounts, UserId, input, Me.TimeZone, Languages.Current, HttpContext.RequestAborted);

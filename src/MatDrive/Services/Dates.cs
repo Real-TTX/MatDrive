@@ -83,6 +83,10 @@ public static class Dates
     public static string Stamp(DateTime? utc, string? zone)
         => utc is null ? string.Empty : Local(utc.Value, zone).ToString(De ? "dd.MM.yyyy HH:mm" : "dd/MM/yyyy HH:mm", CultureInfo.InvariantCulture);
 
+    /// <summary>The last moment of a day in a time zone, in UTC (a link that works "until" a day works the whole day).</summary>
+    public static DateTime EndOfDayUtc(DateOnly day, string? zone)
+        => TimeZoneInfo.ConvertTimeToUtc(DateTime.SpecifyKind(day.ToDateTime(new TimeOnly(23, 59, 59)), DateTimeKind.Unspecified), Zone(zone));
+
     public static string Iso(DateOnly date) => date.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture);
 
     public static DateOnly? ParseIso(string? text)

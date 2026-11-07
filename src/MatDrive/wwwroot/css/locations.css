@@ -21,6 +21,8 @@
 .md-loc-error { margin-bottom: var(--mat-space-4); }
 .md-loc-error p { margin: var(--mat-space-1) 0 var(--mat-space-3); overflow-wrap: anywhere; }
 .md-loc-actions { flex-wrap: wrap; align-items: center; }
+/* the toolkit orders the actions (primary, the others, a space, the end): the space of the location stands at the end */
+.md-loc-actions > .md-loc-space { order: 3; }
 
 /* the panel of a long operation (same place as the uploads) */
 .md-loc-busy .md-uploads__head { justify-content: flex-start; border-bottom: 0; padding-block: var(--mat-space-3); }

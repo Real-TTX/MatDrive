@@ -340,11 +340,18 @@ public sealed class WebDavProvider : ILocationProvider
         foreach (var segment in parent.Split('/'))
         {
             current = PathGuard.Combine(current, segment);
-            if (await GetAsync(current, ct) is null)
+            if (await GetAsync(current, ct) is not null)
             {
-                using var response = await SendAsync(new HttpMethod("MKCOL"), Resolve(current, folder: true), null, null, ct);
-                EnsureSuccess(response);
+                continue;
             }
+
+            using var response = await SendAsync(new HttpMethod("MKCOL"), Resolve(current, folder: true), null, null, ct);
+            if (!response.IsSuccessStatusCode && await GetAsync(current, ct) is { IsFolder: true })
+            {
+                continue; // made at the same moment by another upload into the same new folder (405)
+            }
+
+            EnsureSuccess(response);
         }
     }
 

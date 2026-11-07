@@ -100,6 +100,13 @@ public static class LocationEndpoints
             }
 
             http.Response.Headers.CacheControl = "no-store";
+
+            // the zip format writes the headers of its entries synchronously (see WriteZipAsync): allowed for this response only
+            if (http.Features.Get<IHttpBodyControlFeature>() is { } control)
+            {
+                control.AllowSynchronousIO = true;
+            }
+
             return Results.Stream(async output =>
             {
                 try

@@ -15,7 +15,8 @@
 
 <partial name="_LocationTabs" model="Model.Id" />
 
-<form class="mat-form" method="post" novalidate>
+@* the address of the form names the page itself: after "Test connection" the address of the page carries ?handler=Test, and Save must not go there *@
+<form class="mat-form" method="post" asp-page="/Admin/Locations/Edit" asp-route-id="@Model.Id" novalidate>
     <partial name="_FormSummary" model="ViewData.ModelState" />
 
     @if (!Model.IsNew)

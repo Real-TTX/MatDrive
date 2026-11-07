@@ -104,7 +104,13 @@ public sealed class FtpProvider(LocationSettings settings, ConnectionPool<AsyncF
             throw new LocationException(LocationError.Conflict);
         }
 
-        var status = await c.UploadStream(content, remote, overwrite ? FtpRemoteExists.Overwrite : FtpRemoteExists.Skip, createRemoteDir: true, progress: null, token: ct);
+        var parent = PathGuard.Parent(normalized);
+        if (!string.IsNullOrEmpty(parent))
+        {
+            await EnsureFolderAsync(c, Remote(home, parent), ct);
+        }
+
+        var status = await c.UploadStream(content, remote, overwrite ? FtpRemoteExists.Overwrite : FtpRemoteExists.Skip, createRemoteDir: false, progress: null, token: ct);
         if (status == FtpStatus.Failed)
         {
             throw new LocationException(LocationError.Remote, "The upload failed.");
@@ -160,11 +166,40 @@ public sealed class FtpProvider(LocationSettings settings, ConnectionPool<AsyncF
         var parent = PathGuard.Parent(targetPath);
         if (!string.IsNullOrEmpty(parent))
         {
-            await c.CreateDirectory(Remote(home, parent), true, ct);
+            await EnsureFolderAsync(c, Remote(home, parent), ct);
         }
 
         await c.Rename(source, target, ct);
     }, ct);
+
+    /// <summary>Makes a folder with the folders above it; another upload into the same new folder may make it at the same moment (then it is just there).</summary>
+    private static async Task EnsureFolderAsync(AsyncFtpClient c, string remote, CancellationToken ct)
+    {
+        for (var attempt = 0; ; attempt++)
+        {
+            if (await c.DirectoryExists(remote, ct))
+            {
+                return;
+            }
+
+            try
+            {
+                if (await c.CreateDirectory(remote, true, ct))
+                {
+                    return;
+                }
+            }
+            catch (FtpCommandException) when (attempt < 2)
+            {
+                // made meanwhile (550 exists): look again
+            }
+
+            if (attempt >= 2)
+            {
+                throw new LocationException(LocationError.Remote, "The folder was not created.");
+            }
+        }
+    }
 
     public Task DeleteAsync(string path, CancellationToken ct) => Run(async (c, home) =>
     {

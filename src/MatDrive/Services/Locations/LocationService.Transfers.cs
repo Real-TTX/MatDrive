@@ -350,14 +350,23 @@ public static partial class LocationService
         });
     }
 
-    /// <summary>Streams the zip into <paramref name="output"/> (the response): nothing is held in memory or in a temporary file.</summary>
+    /// <summary>
+    /// Streams the zip into <paramref name="output"/> (the response): nothing is held in memory or in a temporary file. The zip format writes the header of an
+    /// entry synchronously when the next one starts: those small writes are collected (64 KB) and the caller allows synchronous writes for this response.
+    /// </summary>
     public static async Task WriteZipAsync(LocationZip zip, Stream output, CancellationToken ct)
     {
-        await using var archive = await ZipArchive.CreateAsync(output, ZipArchiveMode.Create, leaveOpen: true, entryNameEncoding: null, ct);
-        foreach (var root in zip.Roots)
+        var buffered = new BufferedStream(output, 64 * 1024);
+        await using (var archive = await ZipArchive.CreateAsync(buffered, ZipArchiveMode.Create, leaveOpen: true, entryNameEncoding: null, ct))
         {
-            await AddToZipAsync(zip.Context.Provider, archive, root, root.Name.Length == 0 ? zip.Context.Location.Name : root.Name, ct);
+            foreach (var root in zip.Roots)
+            {
+                await AddToZipAsync(zip.Context.Provider, archive, root, root.Name.Length == 0 ? zip.Context.Location.Name : root.Name, ct);
+            }
         }
+
+        // the response is not ours to close: only what is collected goes out
+        await buffered.FlushAsync(ct);
     }
 
     private static async Task AddToZipAsync(ILocationProvider provider, ZipArchive archive, LocationEntry entry, string name, CancellationToken ct)

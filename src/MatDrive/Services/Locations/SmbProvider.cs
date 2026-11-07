@@ -595,7 +595,14 @@ public sealed class SmbProvider(LocationSettings settings, ConnectionPool<SmbSes
             var remote = Resolve(current);
             if (!Exists(s, remote, out _))
             {
-                MakeFolder(s, remote);
+                try
+                {
+                    MakeFolder(s, remote);
+                }
+                catch (LocationException ex) when (ex.Code == LocationError.Conflict && Exists(s, remote, out var folder) && folder)
+                {
+                    // made at the same moment by another upload into the same new folder
+                }
             }
         }
     }

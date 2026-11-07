@@ -342,7 +342,18 @@ public sealed class SftpProvider(LocationSettings settings, ConnectionPool<SftpC
             var remote = Remote(c, current);
             if (!await c.ExistsAsync(remote, ct))
             {
-                await c.CreateDirectoryAsync(remote, ct);
+                try
+                {
+                    await c.CreateDirectoryAsync(remote, ct);
+                }
+                catch (SshException)
+                {
+                    // made at the same moment by another upload into the same new folder: fine; anything else is the error
+                    if (!await c.ExistsAsync(remote, ct))
+                    {
+                        throw;
+                    }
+                }
             }
         }
     }

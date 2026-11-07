@@ -524,11 +524,13 @@ async function preview(item) {
     name.textContent = it.name;
     prev.hidden = index <= 0;
     next.hidden = index >= all.length - 1;
-    tools.replaceChildren(
+    // replaceChildren turns null into the text "null": only the buttons that apply go in
+    tools.replaceChildren(...[
       it.office ? el('a', { class: 'mat-btn mat-btn--primary mat-btn--sm', href: '/office/open/' + it.id, target: '_blank', rel: 'noopener' }, icon('external'), el('span', { text: t('Drive.OpenInOffice') })) : null,
       it.text ? el('a', { class: 'mat-btn mat-btn--secondary mat-btn--sm', href: '/drive/edit/' + it.id }, icon('edit'), el('span', { text: t('Drive.EditText') })) : null,
       el('a', { class: 'mat-btn mat-btn--secondary mat-btn--icon mat-btn--sm', href: `/files/${it.id}/content?download=true`, 'aria-label': t('Drive.Download'), 'data-tip': t('Drive.Download') }, icon('download')),
-      el('a', { class: 'mat-btn mat-btn--secondary mat-btn--icon mat-btn--sm', href: '/drive/item/' + it.id, 'aria-label': t('Drive.Details'), 'data-tip': t('Drive.Details') }, icon('info')));
+      el('a', { class: 'mat-btn mat-btn--secondary mat-btn--icon mat-btn--sm', href: '/drive/item/' + it.id, 'aria-label': t('Drive.Details'), 'data-tip': t('Drive.Details') }, icon('info')),
+    ].filter(Boolean));
     const src = `/files/${it.id}/content`;
     stage.replaceChildren();
     switch (it.preview) {

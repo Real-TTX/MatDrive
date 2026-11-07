@@ -248,7 +248,10 @@ public static partial class LocationService
         return null;
     }
 
-    /// <summary>Copies files and folders of the drives (that the person may see) into a folder of a location the person may change.</summary>
+    /// <summary>
+    /// Copies files and folders of the drives (that the person may see) into a folder of a location the person may change. A name that is taken there gets a number
+    /// ("name (2).ext"); when the server tells its free space, the bytes are checked once before the first one goes out (a full location refuses as "too large").
+    /// </summary>
     public static async Task<Outcome<int>> FromDriveAsync(AppDbContext db, LocationConnections connections, BlobStore store, long userId, long locationId, IReadOnlyList<long> nodeIds,
         string? folder, CancellationToken ct = default)
     {
@@ -260,6 +263,7 @@ public static partial class LocationService
 
         var actor = Actor.Of(userId);
         var nodes = new List<Node>();
+        long bytes = 0;
         foreach (var id in nodeIds.Distinct())
         {
             if (await DriveAccess.FindAsync(db, actor, id, ct: ct) is not { } access)
@@ -268,6 +272,7 @@ public static partial class LocationService
             }
 
             nodes.Add(access.Node);
+            bytes += await NodeService.SubtreeBytesAsync(db, access.Node.Path, ct, currentOnly: true);
         }
 
         return await Guard(connections, context, async () =>
@@ -276,6 +281,11 @@ public static partial class LocationService
             if (target.Length > 0 && await context.Provider.GetAsync(target, ct) is not { IsFolder: true })
             {
                 throw new LocationException(LocationError.NotFound);
+            }
+
+            if (await context.Provider.SpaceAsync(ct) is { } space && bytes > space.Free)
+            {
+                throw new LocationException(LocationError.TooLarge);
             }
 
             foreach (var node in nodes)

@@ -2,6 +2,7 @@ using MatDrive.Data;
 using MatDrive.Localization;
 using MatDrive.Services;
 using MatDrive.Services.Files;
+using MatDrive.Services.Locations;
 using MatDrive.Services.Office;
 using Microsoft.AspNetCore.Mvc;
 
@@ -43,6 +44,9 @@ public sealed class IndexModel(AppDbContext db) : AppPageModel
     public string Title { get; private set; } = string.Empty;
 
     public IReadOnlyList<OfficeKind> OfficeKinds { get; private set; } = [];
+
+    /// <summary>Whether the person may change a storage location: then items can be copied to one (not from the trash).</summary>
+    public bool CanCopyToLocation { get; private set; }
 
     public string Zone => Me.TimeZone;
 
@@ -135,6 +139,8 @@ public sealed class IndexModel(AppDbContext db) : AppPageModel
         {
             Role = AccessRole.Owner;
         }
+
+        CanCopyToLocation = Mode != "trash" && await LocationAccess.CanWriteAnyAsync(db, UserId);
 
         Toolbar = new ToolbarModel
         {

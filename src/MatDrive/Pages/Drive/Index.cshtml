@@ -37,7 +37,8 @@
 }
 
 <div class="md-explorer mat-list" id="md-explorer" data-view-scope data-selectable
-     data-drive="@Model.CurrentDrive!.Id" data-folder="@Model.Folder?.Id" data-mode="@Model.Mode" data-can-add="@(Model.CanAdd ? "true" : "false")" data-office="@office">
+     data-drive="@Model.CurrentDrive!.Id" data-folder="@Model.Folder?.Id" data-mode="@Model.Mode" data-can-add="@(Model.CanAdd ? "true" : "false")" data-office="@office"
+     data-to-location="@(Model.CanCopyToLocation ? "true" : "false")">
     <partial name="_Toolbar" model="Model.Toolbar" />
 
     @* what is selected: the actions for several items at once (LIST-07 for many) *@
@@ -53,6 +54,10 @@
             <button type="button" class="mat-btn mat-btn--secondary mat-btn--sm" data-act="download">@Ui.Icon("download")<span>@L["Drive.Download"]</span></button>
             <button type="button" class="mat-btn mat-btn--secondary mat-btn--sm" data-act="move">@Ui.Icon("folder-move")<span>@L["Drive.Move"]</span></button>
             <button type="button" class="mat-btn mat-btn--secondary mat-btn--sm" data-act="copy">@Ui.Icon("copy")<span>@L["Drive.Copy"]</span></button>
+            @if (Model.CanCopyToLocation)
+            {
+                <button type="button" class="mat-btn mat-btn--secondary mat-btn--sm" data-act="to-location">@Ui.Icon("server")<span>@L["Drive.CopyToLocation"]</span></button>
+            }
             <button type="button" class="mat-btn mat-btn--secondary mat-btn--sm" data-act="star">@Ui.Icon("star")<span>@L["Drive.Star"]</span></button>
             <button type="button" class="mat-btn mat-btn--danger mat-btn--sm md-sep" data-act="trash">@Ui.Icon("trash")<span>@L["Drive.MoveToTrash"]</span></button>
         }

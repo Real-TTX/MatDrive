@@ -24,9 +24,6 @@
 /* the toolkit orders the actions (primary, the others, a space, the end): the space of the location stands at the end */
 .md-loc-actions > .md-loc-space { order: 3; }
 
-/* the panel of a long operation (same place as the uploads) */
-.md-loc-busy .md-uploads__head { justify-content: flex-start; border-bottom: 0; padding-block: var(--mat-space-3); }
-
 /* names that are taken (before an upload) */
 .md-loc-conflict p { margin: 0 0 var(--mat-space-2); }
 .md-loc-conflict__list { margin: 0; padding-left: var(--mat-space-5); display: flex; flex-direction: column; gap: 2px; font-size: var(--mat-fs-sm); overflow-wrap: anywhere; }

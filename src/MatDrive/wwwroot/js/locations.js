@@ -4,7 +4,7 @@
    previous and next file), moving and copying inside the location and to another one, copying to My Drive or a shared drive and from the drives into the
    folder, unzip, the properties with the rwx permissions, and the search below the folder (sent by the server as it is found, with a button to stop).
    Every change goes to /live/locations (business layer); the list is drawn by the server and loaded again after a change. */
-import { t, el, icon, request, toast, dialog, token, stamp, lang, uid } from './util.js';
+import { t, el, icon, request, toast, dialog, token, stamp, lang, uid, busy } from './util.js';
 
 const root = document.getElementById('md-loc-explorer');
 const editor = document.getElementById('md-loc-editor');
@@ -84,15 +84,7 @@ function problem(e) {
   return e.body?.error || (e.status === 404 ? t('Locations.NotAllowed') : t('Locations.Failed'));
 }
 
-/** A panel at the bottom right while a long operation runs (copies between servers, unzip, delete of a large folder). */
-function busy(label) {
-  const node = el('section', { class: 'md-uploads md-loc-busy', role: 'status', 'aria-live': 'polite' },
-    el('div', { class: 'md-uploads__head' }, el('span', { class: 'mat-spinner mat-spinner--sm', 'aria-hidden': 'true' }), el('strong', { class: 'md-uploads__title', text: label })));
-  document.body.append(node);
-  return () => node.remove();
-}
-
-/** A change: the request, then the page again with a message (or the error as a toast). */
+/** A change: the request, then the page again with a message (or the error as a toast); busyLabel shows the panel of util.busy while it runs. */
 async function act(url, body, done, busyLabel) {
   const stop = busyLabel ? busy(busyLabel) : null;
   try {

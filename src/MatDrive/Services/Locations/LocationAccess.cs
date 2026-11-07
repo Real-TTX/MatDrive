@@ -68,6 +68,10 @@ public static class LocationAccess
             .ToList();
     }
 
+    /// <summary>Whether a person may change at least one location (the explorer of the drives then offers "Copy to storage location").</summary>
+    public static async Task<bool> CanWriteAnyAsync(AppDbContext db, long userId, CancellationToken ct = default)
+        => (await ListForPersonAsync(db, userId, ct)).Any(l => l.Role >= AccessRole.Editor);
+
     /// <summary>The locations a person can open, for the menu.</summary>
     public static async Task<IReadOnlyList<(long Id, string Name, LocationKind Kind)>> ListForMenuAsync(AppDbContext db, long userId, CancellationToken ct = default)
     {

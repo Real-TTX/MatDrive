@@ -45,6 +45,29 @@ public static class LocationAccess
         return role >= minimum && role > AccessRole.None ? (location, role) : null;
     }
 
+    /// <summary>The locations a person can open with their role on each (the pickers of "Move to" and "Copy to").</summary>
+    public static async Task<IReadOnlyList<(long Id, string Name, LocationKind Kind, AccessRole Role)>> ListForPersonAsync(AppDbContext db, long userId, CancellationToken ct = default)
+    {
+        var rows = await db.StorageLocations.AsNoTracking()
+            .Where(l => l.IsActive && (l.ForEveryone || l.Access.Any(a => a.UserId == userId)))
+            .Select(l => new { l.Id, l.Name, l.Kind, l.ForEveryone, l.EveryoneRole, l.IsReadOnly, Listed = l.Access.Where(a => a.UserId == userId).Select(a => (AccessRole?)a.Role).FirstOrDefault() })
+            .ToListAsync(ct);
+        return rows
+            .Select(r =>
+            {
+                var role = r.ForEveryone ? r.EveryoneRole : AccessRole.None;
+                if (r.Listed is { } listed && listed > role)
+                {
+                    role = listed;
+                }
+
+                return (r.Id, r.Name, r.Kind, r.IsReadOnly && role > AccessRole.Viewer ? AccessRole.Viewer : role);
+            })
+            .Where(r => r.Item4 > AccessRole.None)
+            .OrderBy(r => r.Name, StringComparer.CurrentCultureIgnoreCase)
+            .ToList();
+    }
+
     /// <summary>The locations a person can open, for the menu.</summary>
     public static async Task<IReadOnlyList<(long Id, string Name, LocationKind Kind)>> ListForMenuAsync(AppDbContext db, long userId, CancellationToken ct = default)
     {

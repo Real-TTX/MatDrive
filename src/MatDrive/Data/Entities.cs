@@ -396,8 +396,23 @@ public sealed class StorageLocation : SoftEntity
 
     public string? Username { get; set; }
 
-    /// <summary>The password, encrypted with the keys of the data volume (DataProtection). Never sent to a browser.</summary>
+    /// <summary>The password, encrypted with the keys of the data volume (DataProtection). Never sent to a browser. With a private key (SFTP) it is the passphrase of the key.</summary>
     public string? SecretProtected { get; set; }
+
+    /// <summary>The domain of an SMB account (empty: the account of the server itself).</summary>
+    public string? Domain { get; set; }
+
+    /// <summary>The address of a WebDAV share (https://cloud.example.com/remote.php/dav/files/anna).</summary>
+    public string? Url { get; set; }
+
+    /// <summary>FTP: an encrypted connection (FTPS, explicit TLS).</summary>
+    public bool UseTls { get; set; }
+
+    /// <summary>FTPS and WebDAV over https: accept a certificate that is not trusted (a NAS with a certificate of its own).</summary>
+    public bool AcceptAnyCertificate { get; set; }
+
+    /// <summary>SFTP: the private key (OpenSSH or PEM), encrypted like the password. Never sent to a browser.</summary>
+    public string? PrivateKeyProtected { get; set; }
 
     public bool IsReadOnly { get; set; }
 

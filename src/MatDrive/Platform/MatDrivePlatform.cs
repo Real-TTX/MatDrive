@@ -1,5 +1,6 @@
 using System.Text.Json;
 using MatDrive.Services;
+using MatDrive.Services.Locations;
 using MatPlatform;
 
 namespace MatDrive.Platform;
@@ -10,7 +11,7 @@ namespace MatDrive.Platform;
 /// The settings are those of the admin page System (registration, public address, space, trash, versions), kept in the same place (<see cref="InstanceService"/>).
 /// The values come from the services (no DbContext here: this is the web layer).
 /// </summary>
-public sealed class MatDrivePlatform(InstanceService instance, ILogger<MatDrivePlatform> log)
+public sealed class MatDrivePlatform(InstanceService instance, LocationMonitor locations, ILogger<MatDrivePlatform> log)
     : IMatPlatformState, IMatPlatformConfiguration, IMatPlatformActions, IMatPlatformHealth
 {
     /// <summary>The id of MatDrive in the platform (and the default client id at MatIdentity), as in MatDesign <c>AppRegistry.cs</c>.</summary>
@@ -28,7 +29,7 @@ public sealed class MatDrivePlatform(InstanceService instance, ILogger<MatDriveP
 
         o.Page("overview", T("Übersicht", "Overview"), "dashboard",
             MatSection.Tiles("users", "files", "folders", "used", "free", "sharedDrives", "sharedItems", "links", "locations", "uploads7", "trash", "registration", "lastActivity"),
-            MatSection.Actions("openApp", "openUsers", "openLocations", "openIntegrations", "openActivity", "openSystem", "cleanUp"));
+            MatSection.Actions("openApp", "openUsers", "openLocations", "openIntegrations", "openActivity", "openSystem", "cleanUp", "checkLocations"));
         o.Page("settings", T("Einstellungen", "Settings"), "settings",
             MatSection.Form(T("Allgemein", "General"), "registrationOpen", "publicUrl"),
             MatSection.Form(T("Speicher", "Storage"), "defaultQuotaGb", "maxUploadMb", "trashDays", "versionDays"));
@@ -75,6 +76,9 @@ public sealed class MatDrivePlatform(InstanceService instance, ILogger<MatDriveP
             T("Beendete Sitzungen, abgelaufene Elemente des Papierkorbs, alte Versionen und abgebrochene Uploads jetzt entfernen?",
               "Remove ended sessions, expired items of the trash, old versions and broken uploads now?"));
 
+        // the storage locations: check them all now (they are checked every five minutes anyway)
+        o.PostAction("checkLocations", T("Speicherorte prüfen", "Check storage locations"), "refresh");
+
         o.Role("admin", T("Administrator", "Administrator"));
         o.Role("user", T("Benutzer", "User"));
     }
@@ -93,6 +97,7 @@ public sealed class MatDrivePlatform(InstanceService instance, ILogger<MatDriveP
             checks.Add(new MatHealthCheck("administrators", "degraded", call.T("Kein aktiver Administrator.", "No active administrator.")));
         }
 
+        checks.Add(await LocationHealthAsync(call, ct));
         return checks;
     }
 
@@ -191,6 +196,11 @@ public sealed class MatDrivePlatform(InstanceService instance, ILogger<MatDriveP
 
     public async Task<MatActionResult?> RunActionAsync(string id, MatPlatformCall call, CancellationToken ct)
     {
+        if (id == "checkLocations")
+        {
+            return await CheckLocationsAsync(call, ct);
+        }
+
         if (id != "cleanUp")
         {
             return null;
@@ -201,5 +211,26 @@ public sealed class MatDrivePlatform(InstanceService instance, ILogger<MatDriveP
         return new MatActionResult(true, call.T(
             $"Aufgeräumt: {result.Sessions} Sitzungen, {result.Items} Elemente des Papierkorbs, {result.Versions} alte Versionen, {result.Uploads} Uploads.",
             $"Cleaned up: {result.Sessions} sessions, {result.Items} items of the trash, {result.Versions} old versions, {result.Uploads} uploads."));
+    }
+
+    // ---- the storage locations -------------------------------------------------------------------------------------------------
+
+    /// <summary>The health entry <c>locations</c>: degraded while the last check could not reach an active location.</summary>
+    private async Task<MatHealthCheck> LocationHealthAsync(MatPlatformCall call, CancellationToken ct)
+    {
+        var (active, down) = await locations.HealthAsync(ct);
+        return down.Count == 0
+            ? new MatHealthCheck("locations", "ok", active == 0 ? call.T("Keine aktiven Speicherorte.", "No active storage locations.") : null)
+            : new MatHealthCheck("locations", "degraded", call.T($"Nicht erreichbar: {string.Join(", ", down)}.", $"Not reachable: {string.Join(", ", down)}."));
+    }
+
+    /// <summary>The action <c>checkLocations</c>: checks every active location now.</summary>
+    private async Task<MatActionResult> CheckLocationsAsync(MatPlatformCall call, CancellationToken ct)
+    {
+        var summary = await locations.CheckAllAsync(ct);
+        log.LogInformation("Storage locations checked through the platform API by {Caller}: {Reachable} of {Total} reachable", call.Caller, summary.Reachable, summary.Total);
+        return new MatActionResult(summary.Unreachable == 0, call.T(
+            $"{summary.Reachable} von {summary.Total} Speicherorten erreichbar.",
+            $"{summary.Reachable} of {summary.Total} storage locations reachable."));
     }
 }

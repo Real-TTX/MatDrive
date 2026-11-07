@@ -188,6 +188,9 @@ public sealed class AppDbContext(DbContextOptions<AppDbContext> options, Current
             e.Property(x => x.Share).HasMaxLength(255);
             e.Property(x => x.Username).HasMaxLength(255);
             e.Property(x => x.SecretProtected).HasMaxLength(2000);
+            e.Property(x => x.Domain).HasMaxLength(255);
+            e.Property(x => x.Url).HasMaxLength(500);
+            e.Property(x => x.PrivateKeyProtected).HasMaxLength(20000);
             e.Property(x => x.Note).HasMaxLength(1000);
             e.HasQueryFilter(x => x.UpdateState != SoftEntity.Deleted);
         });

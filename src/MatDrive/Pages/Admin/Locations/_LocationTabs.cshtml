@@ -1,0 +1,15 @@
+@model long?
+@*
+    The areas of a storage location (UI rule: an entity with several areas has tabs), each a page of its own: General (the connection) and Access (who may use it).
+    A new location has only General: who may use it is decided after it was created.
+*@
+@{
+    var active = ViewData["Tab"] as string ?? "general";
+}
+<md-tabs label="@L["Locations.Tabs"]">
+    <md-tab href="@(Model is { } id ? $"/Admin/Locations/Edit?id={id}" : "/Admin/Locations/Edit")" active="@(active == "general")">@L["Locations.Tab.General"]</md-tab>
+    @if (Model is { } id2)
+    {
+        <md-tab href="/Admin/Locations/Access?id=@id2" active="@(active == "access")">@L["Locations.Tab.Access"]</md-tab>
+    }
+</md-tabs>

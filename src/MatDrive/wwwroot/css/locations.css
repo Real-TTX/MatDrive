@@ -1,0 +1,97 @@
+/* ==========================================================================
+   MatDrive: the storage locations (Pages/Locations, Pages/Admin/Locations, locations.js). The explorer itself is the one of the drives (app.css, prefix md-);
+   here only what the locations have in addition (prefix md-loc-, md-perm). No literal colours: everything comes from the toolkit's tokens.
+   ========================================================================== */
+
+/* ---- administration -------------------------------------------------------------------------------------------------- */
+.md-loc-cell { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+.md-loc-cell small { font-size: var(--mat-fs-xs); }
+.md-loc-kind { display: inline-flex; align-items: center; gap: var(--mat-space-2); white-space: nowrap; }
+.md-loc-kind .mat-icon { flex: none; width: 18px; height: 18px; color: var(--mat-text-muted); }
+.md-loc-where { max-width: 38ch; overflow-wrap: anywhere; font-size: var(--mat-fs-xs); }
+.md-loc-inline { display: inline; margin: 0; }
+.md-loc-add { margin-top: var(--mat-space-5); padding-top: var(--mat-space-4); border-top: 1px solid var(--mat-border); }
+.md-loc-add__title { margin: 0 0 var(--mat-space-3); font-size: var(--mat-fs-md); }
+
+/* the space of a location: a small meter and its words */
+.md-loc-space { display: inline-flex; align-items: center; gap: var(--mat-space-2); color: var(--mat-text-muted); font-size: var(--mat-fs-sm); white-space: nowrap; }
+.md-loc-space .mat-meter { width: 120px; flex: none; }
+
+/* ---- browsing -------------------------------------------------------------------------------------------------------- */
+.md-loc-error { margin-bottom: var(--mat-space-4); }
+.md-loc-error p { margin: var(--mat-space-1) 0 var(--mat-space-3); overflow-wrap: anywhere; }
+.md-loc-actions { flex-wrap: wrap; align-items: center; }
+/* the toolkit orders the actions (primary, the others, a space, the end): the space of the location stands at the end */
+.md-loc-actions > .md-loc-space { order: 3; }
+
+/* the panel of a long operation (same place as the uploads) */
+.md-loc-busy .md-uploads__head { justify-content: flex-start; border-bottom: 0; padding-block: var(--mat-space-3); }
+
+/* names that are taken (before an upload) */
+.md-loc-conflict p { margin: 0 0 var(--mat-space-2); }
+.md-loc-conflict__list { margin: 0; padding-left: var(--mat-space-5); display: flex; flex-direction: column; gap: 2px; font-size: var(--mat-fs-sm); overflow-wrap: anywhere; }
+
+/* "Copy from Drive": a box per file or folder */
+.md-loc-pick { display: flex; align-items: center; gap: var(--mat-space-1); padding-left: var(--mat-space-3); }
+.md-loc-pick__check { display: inline-flex; align-items: center; justify-content: center; min-width: 32px; min-height: 44px; cursor: pointer; }
+.md-loc-pick .md-picker__item { flex: 1 1 auto; min-width: 0; padding-left: var(--mat-space-1); }
+/* a file of the drive: like a folder of the picker, but nothing to open (its icon keeps the colour of its type) */
+.md-loc-pick__file { display: flex; flex: 1 1 auto; align-items: center; gap: var(--mat-space-2); min-width: 0; min-height: 44px; padding: 0 var(--mat-space-3) 0 var(--mat-space-1); color: var(--mat-text); }
+.md-loc-pick__file > span:not(.md-ficon) { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.md-loc-pick__file small { margin-left: auto; white-space: nowrap; }
+.md-loc-pick .md-ficon .mat-icon { width: 20px; height: 20px; }
+.md-picker__item > span:not(.md-ficon) { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.md-loc-chosen { margin: var(--mat-space-2) 0 0; color: var(--mat-text-muted); font-size: var(--mat-fs-sm); }
+
+/* ---- properties and the rwx permissions -------------------------------------------------------------------------------- */
+.md-loc-props { display: flex; flex-direction: column; gap: var(--mat-space-4); }
+.md-loc-facts { margin: 0; }
+.md-loc-facts dd { overflow-wrap: anywhere; }
+.md-perm-box { padding-top: var(--mat-space-4); border-top: 1px solid var(--mat-border); }
+.md-perm__title { margin: 0 0 var(--mat-space-2); font-size: var(--mat-fs-md); }
+.md-perm { border-collapse: collapse; font-size: var(--mat-fs-sm); }
+.md-perm th, .md-perm td { padding: var(--mat-space-1) var(--mat-space-3); text-align: center; }
+.md-perm th[scope="row"] { text-align: left; font-weight: 560; color: var(--mat-text); }
+.md-perm thead th { color: var(--mat-text-muted); font-weight: 500; }
+.md-perm td { min-width: 44px; height: 44px; }
+.md-perm input { width: 20px; height: 20px; cursor: pointer; accent-color: var(--mat-accent); }
+.md-perm input:disabled { cursor: default; }
+.md-perm__mode { margin: var(--mat-space-2) 0 0; color: var(--mat-text-muted); }
+
+/* ---- the search below a folder ----------------------------------------------------------------------------------------- */
+.md-loc-search { display: flex; flex-direction: column; gap: var(--mat-space-3); }
+.md-loc-search__options { display: flex; flex-wrap: wrap; gap: var(--mat-space-2) var(--mat-space-5); }
+.md-loc-search__options .mat-check { margin: 0; padding: var(--mat-space-1) 0; }
+.md-loc-search__bar { display: flex; align-items: center; gap: var(--mat-space-3); min-height: 32px; }
+.md-loc-search__status { flex: 1 1 auto; min-width: 0; margin: 0; font-size: var(--mat-fs-sm); overflow-wrap: anywhere; }
+.md-loc-search__bar .mat-btn[hidden] { display: none; }
+.md-loc-search__list { list-style: none; margin: 0; padding: 0; max-height: min(52dvh, 460px); overflow: auto; border: 1px solid var(--mat-border); border-radius: var(--mat-radius-sm); }
+.md-loc-search__list:empty { display: none; }
+.md-loc-hit { display: flex; align-items: center; gap: var(--mat-space-1); padding-right: var(--mat-space-2); }
+.md-loc-hit + .md-loc-hit { border-top: 1px solid var(--mat-border); }
+.md-loc-hit__open {
+  display: flex; flex: 1 1 auto; align-items: flex-start; gap: var(--mat-space-2); min-width: 0; min-height: 44px; padding: var(--mat-space-2) var(--mat-space-3);
+  border: 0; background: transparent; color: var(--mat-text); font: inherit; text-align: left; cursor: pointer;
+}
+.md-loc-hit__open:hover, .md-loc-hit__open:focus-visible { background: var(--mat-surface-2); }
+.md-loc-hit__text { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+.md-loc-hit__name { font-weight: 560; overflow-wrap: anywhere; }
+.md-loc-hit__text small { overflow-wrap: anywhere; font-size: var(--mat-fs-xs); }
+.md-loc-hit__snippet { padding: 2px var(--mat-space-2); border-left: 3px solid var(--mat-accent); background: var(--mat-surface-2); color: var(--mat-text); font-family: var(--mat-mono); white-space: pre-wrap; }
+
+/* ---- the text editor --------------------------------------------------------------------------------------------------- */
+.md-editor__bar { flex-wrap: wrap; gap: var(--mat-space-3); }
+.md-editor__bar .mat-check { margin: 0; padding: 0; min-height: 32px; align-items: center; }
+.md-editor__pos { margin-left: auto; font-size: var(--mat-fs-sm); }
+
+/* ---- phones ------------------------------------------------------------------------------------------------------------ */
+@media (max-width: 599px) {
+  /* the row under the edit page (Save, Back, Test connection, Remove) stays one line: every button but the first shows its icon only, as <md-buttons> says;
+     the label stays for screen readers (and as the tooltip) */
+  .md-btn-row .md-btn-collapse > span { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+  .md-btn-row .md-btn-collapse { gap: 0; }
+  .md-loc-space .mat-meter { width: 80px; }
+  .md-loc-actions .md-loc-space { width: 100%; }
+  .md-loc-where { max-width: none; }
+  .md-perm th, .md-perm td { padding-inline: var(--mat-space-2); }
+}

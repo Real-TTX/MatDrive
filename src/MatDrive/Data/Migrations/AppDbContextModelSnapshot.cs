@@ -567,11 +567,18 @@ namespace MatDrive.Data.Migrations
 
                     NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<long>("Id"));
 
+                    b.Property<bool>("AcceptAnyCertificate")
+                        .HasColumnType("boolean");
+
                     b.Property<DateTime>("CreateDate")
                         .HasColumnType("timestamp with time zone");
 
                     b.Property<long?>("CreateUserId")
                         .HasColumnType("bigint");
+
+                    b.Property<string>("Domain")
+                        .HasMaxLength(255)
+                        .HasColumnType("character varying(255)");
 
                     b.Property<int>("EveryoneRole")
                         .HasColumnType("integer");
@@ -604,6 +611,10 @@ namespace MatDrive.Data.Migrations
                     b.Property<int?>("Port")
                         .HasColumnType("integer");
 
+                    b.Property<string>("PrivateKeyProtected")
+                        .HasMaxLength(20000)
+                        .HasColumnType("character varying(20000)");
+
                     b.Property<string>("RootPath")
                         .IsRequired()
                         .HasMaxLength(500)
@@ -625,6 +636,13 @@ namespace MatDrive.Data.Migrations
 
                     b.Property<long?>("UpdateUserId")
                         .HasColumnType("bigint");
+
+                    b.Property<string>("Url")
+                        .HasMaxLength(500)
+                        .HasColumnType("character varying(500)");
+
+                    b.Property<bool>("UseTls")
+                        .HasColumnType("boolean");
 
                     b.Property<string>("Username")
                         .HasMaxLength(255)

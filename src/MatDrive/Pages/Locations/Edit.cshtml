@@ -1,0 +1,47 @@
+@page "/locations/edit/{id:long}"
+@model MatDrive.Pages.Locations.EditModel
+@using MatDrive.Services.Locations
+@{
+    ViewData["Title"] = Model.Name;
+    ViewData["Crumbs"] = Model.Crumbs;
+    ViewData["Width"] = "wide";
+    ViewData["PageSub"] = Model.Error is not null ? null : L[Model.CanEdit ? "Locations.Editor.Sub" : "Locations.Editor.ReadOnly"].Value;
+}
+@section Head {
+    <link rel="stylesheet" href="~/css/locations.css" asp-append-version="true" />
+}
+
+@if (Model.Error is { } error)
+{
+    <div class="mat-alert mat-alert--danger" role="alert">@Ui.Icon("x-circle")<div class="mat-alert__body"><strong>@L["Locations.Editor.CannotOpen"]</strong><p>@error</p></div></div>
+    <div class="mat-btn-row">
+        <a class="mat-btn mat-btn--secondary" href="@Model.FolderUrl">@Ui.Icon("back")<span>@L["Common.Back"]</span></a>
+    </div>
+}
+else
+{
+    @* the same editor as the one of the drives (wwwroot/js/edit.js): the text comes with the page, locations.js saves it with the ETag it started from *@
+    <div class="md-editor md-loc-editor" id="md-loc-editor" data-location="@Model.Id" data-path="@Model.Display" data-etag="@Model.ETag" data-can-edit="@(Model.CanEdit ? "true" : "false")">
+        <div class="mat-toolbar md-editor__bar">
+            @if (Model.CanEdit)
+            {
+                <button type="button" class="mat-btn mat-btn--primary mat-btn--sm" data-editor-save disabled>@Ui.Icon("save")<span>@L["Common.Save"]</span></button>
+            }
+            <label class="mat-check md-editor__wrap"><input type="checkbox" class="mat-check__input" data-editor-wrap /><span class="mat-check__text">@L["Locations.Editor.Wrap"]</span></label>
+            <span class="md-editor__state" data-editor-state role="status"></span>
+            <span class="md-editor__pos md-muted" data-editor-pos></span>
+        </div>
+        <label class="mat-sr-only" for="md-loc-text">@L["Locations.Editor.Label", Model.Name]</label>
+        <textarea class="md-editor__area" id="md-loc-text" spellcheck="false" autocapitalize="off" autocomplete="off" readonly="@(!Model.CanEdit)">
+@Model.Text</textarea>
+    </div>
+
+    <div class="mat-btn-row">
+        <a class="mat-btn mat-btn--secondary" href="@Model.FolderUrl">@Ui.Icon("back")<span>@L["Common.Back"]</span></a>
+        <a class="mat-btn mat-btn--secondary" href="@IndexModel.ContentUrl(Model.Id, Model.Display, download: true)">@Ui.Icon("download")<span>@L["Locations.Download"]</span></a>
+    </div>
+}
+
+@section Scripts {
+    <script type="module" src="~/js/locations.js" asp-append-version="true"></script>
+}

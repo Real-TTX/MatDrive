@@ -364,8 +364,9 @@ public sealed class LocationServiceTests
         }
     }
 
+    /// <summary>Like the clients of the app (LocationSetup): redirects by hand, so the authorization stays on the same host.</summary>
     private sealed class PlainHttp : IHttpClientFactory
     {
-        public HttpClient CreateClient(string name) => new();
+        public HttpClient CreateClient(string name) => new(new SocketsHttpHandler { AllowAutoRedirect = false }) { Timeout = Timeout.InfiniteTimeSpan };
     }
 }

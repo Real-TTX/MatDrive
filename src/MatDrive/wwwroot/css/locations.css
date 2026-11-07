@@ -35,8 +35,9 @@
 .md-loc-pick { display: flex; align-items: center; gap: var(--mat-space-1); padding-left: var(--mat-space-3); }
 .md-loc-pick__check { display: inline-flex; align-items: center; justify-content: center; min-width: 32px; min-height: 44px; cursor: pointer; }
 .md-loc-pick .md-picker__item { flex: 1 1 auto; min-width: 0; padding-left: var(--mat-space-1); }
-.md-loc-pick__file { cursor: default; }
-.md-loc-pick__file:hover { background: transparent; }
+/* a file of the drive: like a folder of the picker, but nothing to open (its icon keeps the colour of its type) */
+.md-loc-pick__file { display: flex; flex: 1 1 auto; align-items: center; gap: var(--mat-space-2); min-width: 0; min-height: 44px; padding: 0 var(--mat-space-3) 0 var(--mat-space-1); color: var(--mat-text); }
+.md-loc-pick__file > span:not(.md-ficon) { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .md-loc-pick__file small { margin-left: auto; white-space: nowrap; }
 .md-loc-pick .md-ficon .mat-icon { width: 20px; height: 20px; }
 .md-picker__item > span:not(.md-ficon) { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
@@ -85,6 +86,10 @@
 
 /* ---- phones ------------------------------------------------------------------------------------------------------------ */
 @media (max-width: 599px) {
+  /* the row under the edit page (Save, Back, Test connection, Remove) stays one line: every button but the first shows its icon only, as <md-buttons> says;
+     the label stays for screen readers (and as the tooltip) */
+  .md-btn-row .md-btn-collapse > span { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+  .md-btn-row .md-btn-collapse { gap: 0; }
   .md-loc-space .mat-meter { width: 80px; }
   .md-loc-actions .md-loc-space { width: 100%; }
   .md-loc-where { max-width: none; }

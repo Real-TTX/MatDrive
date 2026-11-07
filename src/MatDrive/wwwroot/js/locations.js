@@ -545,9 +545,8 @@ function picker({ places, placeLabel, current, start, rootIcon, load, row }) {
 }
 
 function folderRow(entry, open) {
-  const colour = entry.colour ? { 'data-colour': entry.colour } : {};
   const folderIcon = icon('folder');
-  if (colour['data-colour']) folderIcon.setAttribute('data-colour', colour['data-colour']);
+  if (entry.colour) folderIcon.setAttribute('data-colour', entry.colour); // a folder of a drive may have a colour
   return el('li', {}, el('button', { type: 'button', class: 'md-picker__item', onclick: open }, folderIcon, el('span', { text: entry.name }), icon('chevron-right', 'md-picker__chev')));
 }
 
@@ -615,12 +614,12 @@ async function fromDrive() {
     row: (item, open) => {
       const box = el('input', { type: 'checkbox', class: 'mat-check__input', checked: chosen.has(item.id), 'aria-label': t('Locations.SelectNamed', item.name) });
       box.addEventListener('change', () => { if (box.checked) chosen.set(item.id, item.name); else chosen.delete(item.id); paint(); });
-      const fileIcon = el('span', { class: 'md-ficon md-ficon--' + (item.folder ? 'folder' : item.category) }, icon(item.folder ? 'folder' : 'file'));
+      const fileIcon = el('span', { class: 'md-ficon md-ficon--' + (item.folder ? 'folder' : item.category) }, icon(item.folder ? 'folder' : iconOf(item.category)));
       if (item.folder && item.colour) fileIcon.firstChild.setAttribute('data-colour', item.colour);
       return el('li', { class: 'md-loc-pick' }, el('label', { class: 'md-loc-pick__check' }, box),
         item.folder
           ? el('button', { type: 'button', class: 'md-picker__item', onclick: open }, fileIcon, el('span', { text: item.name }), icon('chevron-right', 'md-picker__chev'))
-          : el('span', { class: 'md-picker__item md-loc-pick__file' }, fileIcon, el('span', { text: item.name }), el('small', { class: 'md-muted', text: bytes(item.size) })));
+          : el('span', { class: 'md-loc-pick__file' }, fileIcon, el('span', { text: item.name }), el('small', { class: 'md-muted', text: bytes(item.size) })));
     },
   });
   body.append(count);
@@ -816,9 +815,11 @@ function preview(item, among) {
     name.textContent = it.name;
     prev.hidden = index <= 0;
     next.hidden = index >= all.length - 1;
-    tools.replaceChildren(
+    // replaceChildren writes a null as the text "null": only real nodes go in
+    tools.replaceChildren(...[
       it.text ? el('a', { class: 'mat-btn mat-btn--secondary mat-btn--sm', href: editUrl(it.path) }, icon('file-text'), el('span', { text: t('Locations.EditText') })) : null,
-      el('a', { class: 'mat-btn mat-btn--secondary mat-btn--icon mat-btn--sm', href: contentUrl(it.path, true), 'aria-label': t('Locations.Download'), 'data-tip': t('Locations.Download') }, icon('download')));
+      el('a', { class: 'mat-btn mat-btn--secondary mat-btn--icon mat-btn--sm', href: contentUrl(it.path, true), 'aria-label': t('Locations.Download'), 'data-tip': t('Locations.Download') }, icon('download')),
+    ].filter(Boolean));
     const src = contentUrl(it.path, false);
     stage.replaceChildren();
     switch (it.preview) {

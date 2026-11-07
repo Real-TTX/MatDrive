@@ -292,6 +292,9 @@ public sealed class FtpProvider(LocationSettings settings, ConnectionPool<AsyncF
         client.Config.DataConnectionReadTimeout = 30000;
         client.Config.DataConnectionType = FtpDataConnectionType.EPSV;
         client.Config.RetryAttempts = 1;
+
+        // the times of the server (MDTM is UTC by the RFC, and a NAS lists in UTC): taken as UTC, never shifted by the zone of this machine
+        client.Config.TimeConversion = FtpDate.UTC;
         try
         {
             await client.Connect(ct);
@@ -375,7 +378,7 @@ public sealed class FtpProvider(LocationSettings settings, ConnectionPool<AsyncF
         try
         {
             var value = await c.GetModifiedTime(remote, ct);
-            return value == DateTime.MinValue ? DateTime.UtcNow : value.ToUniversalTime();
+            return value == DateTime.MinValue ? DateTime.UtcNow : Utc(value);
         }
         catch (FtpException)
         {
@@ -384,10 +387,13 @@ public sealed class FtpProvider(LocationSettings settings, ConnectionPool<AsyncF
         }
     }
 
+    /// <summary>A time of the server as UTC: one without a kind is UTC already (FtpDate.UTC), not a time of this machine.</summary>
+    private static DateTime Utc(DateTime value) => value.Kind == DateTimeKind.Unspecified ? DateTime.SpecifyKind(value, DateTimeKind.Utc) : value.ToUniversalTime();
+
     private static LocationEntry ToEntry(FtpListItem item, string path)
     {
         var folder = item.Type == FtpObjectType.Directory || (item.Type == FtpObjectType.Link && item.LinkObject?.Type == FtpObjectType.Directory);
         return new LocationEntry(item.Name, path, folder, folder ? 0 : Math.Max(0, item.Size),
-            item.Modified == DateTime.MinValue ? DateTime.UtcNow : item.Modified.ToUniversalTime(), item.Name.StartsWith('.'), item.Type == FtpObjectType.Link);
+            item.Modified == DateTime.MinValue ? DateTime.UtcNow : Utc(item.Modified), item.Name.StartsWith('.'), item.Type == FtpObjectType.Link);
     }
 }

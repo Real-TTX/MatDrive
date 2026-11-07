@@ -7,6 +7,7 @@ using MatDrive.Localization;
 using MatDrive.Platform;
 using MatDrive.Services;
 using MatDrive.Services.Files;
+using MatDrive.Services.Locations;
 using MatDrive.Services.Office;
 using MatDrive.Services.Mail;
 using MatPlatform;
@@ -55,6 +56,9 @@ builder.Services.AddSingleton<MailService>();
 builder.Services.AddSingleton<BlobStore>();
 builder.Services.AddHttpClient("office", c => c.Timeout = TimeSpan.FromSeconds(60));
 builder.Services.AddHostedService(sp => sp.GetRequiredService<MailService>());
+
+// The storage locations (local folders, SMB, SFTP, FTP, WebDAV): providers, pools of connections, the check of their reachability.
+builder.Services.AddLocations();
 
 // The Mat platform contract (MatDesign docs/PLATFORM.md): /api, /api/health, /api/state, /api/configure, /api/actions with MAT_API_KEY or a token of MatIdentity.
 // The package MatPlatform (a copy in MatPlatform/) serves the endpoints; MatDrivePlatform describes MatDrive and supplies the values through the services.
@@ -204,6 +208,7 @@ app.MapPost("/language", async (HttpContext http, CurrentUser me, AppDbContext d
 app.MapGet("/health", async (AppDbContext db) => await db.Database.CanConnectAsync() ? Results.Ok("ok") : Results.StatusCode(503)).AllowAnonymous();
 app.MapFileEndpoints();
 app.MapLinkEndpoints();
+app.MapLocationEndpoints();
 app.MapMatPlatform();
 app.MapRazorPages();
 

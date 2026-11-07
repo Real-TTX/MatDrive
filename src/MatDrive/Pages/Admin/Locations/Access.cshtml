@@ -1,0 +1,100 @@
+@page "/Admin/Locations/Access"
+@model MatDrive.Pages.Admin.Locations.AccessModel
+@using MatDrive.Services.Locations
+@{
+    ViewData["Title"] = Model.Info.Name;
+    ViewData["Tab"] = "access";
+    ViewData["Width"] = "narrow";
+    ViewData["Crumbs"] = new List<(string, string?)> { (L["Admin.Title"].Value, null), (L["Locations.Title"].Value, "/Admin/Locations"), (Model.Info.Name, null) };
+}
+@section Head {
+    <link rel="stylesheet" href="~/css/locations.css" asp-append-version="true" />
+}
+
+<partial name="_LocationTabs" model="(long?)Model.Id" />
+
+@if (!Model.Info.IsActive)
+{
+    <div class="mat-alert mat-alert--warning md-mb" role="status">@Ui.Icon("alert")<div class="mat-alert__body">@L["Locations.Access.Inactive"]</div></div>
+}
+@if (Model.Info.IsReadOnly)
+{
+    <div class="mat-alert mat-alert--info md-mb" role="status">@Ui.Icon("lock")<div class="mat-alert__body">@L["Locations.Access.ReadOnly"]</div></div>
+}
+
+<form class="mat-form" method="post" asp-page-handler="Everyone" asp-route-id="@Model.Id" novalidate>
+    <div class="mat-card">
+        <div class="mat-card__head"><h2 class="mat-card__title">@Ui.Icon("users")@L["Locations.Everyone"]</h2></div>
+        <div class="mat-card__body mat-form">
+            <md-field name="Everyone" kind="radios" label="@L["Locations.Everyone.Label"]" value="@Model.Everyone" options="Model.EveryoneChoices" />
+            <div class="mat-btn-row mat-btn-row--plain">
+                <button type="submit" class="mat-btn mat-btn--primary">@Ui.Icon("save")<span>@L["Common.Save"]</span></button>
+            </div>
+        </div>
+    </div>
+</form>
+
+<div class="mat-card">
+    <div class="mat-card__head"><h2 class="mat-card__title">@Ui.Icon("user")@L["Locations.People"]</h2></div>
+    <div class="mat-card__body">
+        @if (Model.Info.People.Count == 0)
+        {
+            <p class="md-muted">@L["Locations.People.Empty"]</p>
+        }
+        else
+        {
+            <md-table caption="@L["Locations.People"]">
+                <thead>
+                    <tr>
+                        <th scope="col">@L["Locations.Col.Person"]</th>
+                        <th scope="col">@L["Locations.Col.Role"]</th>
+                        <th scope="col"><span class="mat-sr-only">@L["Common.Actions"]</span></th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var p in Model.Info.People)
+                    {
+                        <tr>
+                            <td data-label="@L["Locations.Col.Person"]">
+                                <div class="mat-table__name"><span class="mat-avatar mat-avatar--sm" aria-hidden="true">@Ui.Initials(p.Name)</span><span>@p.Name<small class="mat-mono">@p.Email</small></span></div>
+                            </td>
+                            <td data-label="@L["Locations.Col.Role"]">
+                                <form method="post" asp-page-handler="Role" asp-route-id="@Model.Id" class="md-loc-inline">
+                                    <input type="hidden" name="UserIdOf" value="@p.UserId" />
+                                    <div class="mat-seg" role="group" aria-label="@L["Locations.RoleOf", p.Name]">
+                                        @foreach (var r in Model.RoleChoices)
+                                        {
+                                            <button type="submit" class="mat-seg__btn" name="Role" value="@r.Value" aria-pressed="@(p.Role.ToString() == r.Value ? "true" : "false")">@r.Label</button>
+                                        }
+                                    </div>
+                                </form>
+                            </td>
+                            <td class="mat-table__cell-actions">
+                                <div class="mat-table__actions">
+                                    <form method="post" asp-page-handler="Remove" asp-route-id="@Model.Id" class="md-loc-inline">
+                                        <input type="hidden" name="UserIdOf" value="@p.UserId" />
+                                        <button type="submit" class="mat-btn mat-btn--ghost mat-btn--icon mat-btn--sm md-danger" aria-label="@L["Locations.Access.RemoveNamed", p.Name]" data-tip="@L["Locations.Access.Remove"]"
+                                                data-confirm="@L["Locations.Access.RemoveConfirm", p.Name, Model.Info.Name]" data-confirm-ok="@L["Locations.Access.Remove"]" data-confirm-danger>@Ui.Icon("trash")</button>
+                                    </form>
+                                </div>
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </md-table>
+        }
+
+        <form class="mat-form md-loc-add" method="post" asp-page-handler="Add" asp-route-id="@Model.Id" novalidate>
+            <h3 class="md-loc-add__title">@L["Locations.Access.Add"]</h3>
+            <md-field name="Email" kind="email" label="@L["Locations.Access.Email"]" value="@Model.Email" required autocomplete="off" msg-required="@L["Locations.Access.EmailRequired"]" />
+            <md-field name="Role" kind="radios" label="@L["Locations.Col.Role"]" value="@Model.Role" options="Model.RoleChoices" />
+            <div class="mat-btn-row mat-btn-row--plain">
+                <button type="submit" class="mat-btn mat-btn--primary">@Ui.Icon("plus")<span>@L["Locations.Access.AddButton"]</span></button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<div class="mat-btn-row">
+    <a class="mat-btn mat-btn--secondary" href="/Admin/Locations">@Ui.Icon("back")<span>@L["Common.Back"]</span></a>
+</div>

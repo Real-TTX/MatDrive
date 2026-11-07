@@ -45,10 +45,24 @@
         @if (m.Locations.Count > 0)
         {
             <li class="mat-nav__group" role="presentation">@L["Locations.Title"]</li>
+            @* the reachability of the last check (MatDrive.Services.Locations.LocationMonitor): a green dot for a server that answers, a red cross for one that does not *@
+            var reach = Context.RequestServices.GetRequiredService<MatDrive.Services.Locations.LocationConnections>();
             @foreach (var l in m.Locations)
             {
                 var on = key == "location-" + l.Id;
-                <li><a class="@Cls(on)" href="/locations/@l.Id" aria-current="@Cur(on)">@Ui.Icon(l.Kind == LocationKind.Local ? "server" : "network")<span>@l.Name</span></a></li>
+                var status = reach.StatusOf(l.Id);
+                <li>
+                    <a class="@Cls(on)" href="/locations/@l.Id" aria-current="@Cur(on)">@Ui.Icon(l.Kind == LocationKind.Local ? "server" : "network")<span>@l.Name</span>
+                        @if (status is { Reachable: false })
+                        {
+                            <span class="mat-nav__badge mat-nav__badge--error" role="img" aria-label="@L["Locations.Unreachable"]" title="@status.Message">✕</span>
+                        }
+                        else if (status is { Reachable: true } && l.Kind != LocationKind.Local)
+                        {
+                            <span class="mat-nav__badge mat-nav__badge--dot mat-nav__badge--ok" role="img" aria-label="@L["Locations.Reachable"]" title="@L["Locations.Reachable"]"></span>
+                        }
+                    </a>
+                </li>
             }
         }
     </ul>

@@ -1,0 +1,142 @@
+@page "/Admin/Locations/Edit"
+@model MatDrive.Pages.Admin.Locations.EditModel
+@using MatDrive.Services.Locations
+@{
+    ViewData["Title"] = Model.Title;
+    ViewData["Tab"] = "general";
+    ViewData["Width"] = "narrow";
+    ViewData["Crumbs"] = new List<(string, string?)> { (L["Admin.Title"].Value, null), (L["Locations.Title"].Value, "/Admin/Locations"), (Model.IsNew ? L["Common.New"].Value : Model.Title, null) };
+    var secretHint = Model.HasPassword ? L["Locations.Field.Password.Stored"].Value : L["Locations.Field.Password.Hint"].Value;
+    var status = Model.Status;
+}
+@section Head {
+    <link rel="stylesheet" href="~/css/locations.css" asp-append-version="true" />
+}
+
+<partial name="_LocationTabs" model="Model.Id" />
+
+<form class="mat-form" method="post" novalidate>
+    <partial name="_FormSummary" model="ViewData.ModelState" />
+
+    @if (!Model.IsNew)
+    {
+        <div class="mat-card">
+            <div class="mat-card__head"><h2 class="mat-card__title">@Ui.Icon("activity")@L["Locations.Status"]</h2></div>
+            <div class="mat-card__body">
+                <dl class="mat-kv">
+                    <dt>@L["Common.Status"]</dt>
+                    <dd>
+                        @if (!Model.IsActive)
+                        {
+                            <span class="mat-pill mat-pill--plain">@L["Locations.Inactive"]</span>
+                        }
+                        else if (status is null)
+                        {
+                            <span class="mat-pill mat-pill--plain">@L["Locations.NotChecked"]</span>
+                        }
+                        else if (status.Reachable)
+                        {
+                            <span class="mat-pill mat-pill--ok">@L["Locations.Reachable"]</span>
+                        }
+                        else
+                        {
+                            <span class="mat-pill mat-pill--error">@L["Locations.Unreachable"]</span> <span class="md-muted">@status.Message</span>
+                        }
+                    </dd>
+                    @if (status is not null)
+                    {
+                        <dt>@L["Locations.CheckedLast"]</dt>
+                        <dd class="mat-mono">@Dates.Stamp(status.CheckedUtc, Model.Zone)</dd>
+                    }
+                    @if (status?.Space is { } space)
+                    {
+                        <dt>@L["Locations.Space"]</dt>
+                        <dd>
+                            <div class="md-loc-space">
+                                <div class="mat-meter mat-meter--sm"><div class="mat-meter__fill" data-value="@Math.Round(space.Share * 100)" data-tone="@(space.Share > 0.9 ? "error" : space.Share > 0.75 ? "warn" : "ok")"></div></div>
+                                <span>@L["Locations.SpaceFree", Ui.Bytes(space.Free), Ui.Bytes(space.Total)]</span>
+                            </div>
+                        </dd>
+                    }
+                </dl>
+            </div>
+        </div>
+    }
+
+    <div class="mat-card">
+        <div class="mat-card__head"><h2 class="mat-card__title">@Ui.Icon("plug")@L["Locations.Connection"]</h2></div>
+        <div class="mat-card__body mat-form">
+            <md-field name="Name" label="@L["Common.Name"]" required value="@Model.Name" maxlength="120" msg-required="@L["Common.NameRequired"]" hint="@L["Locations.Field.Name.Hint"]" />
+            <md-field name="Kind" kind="radios" label="@L["Locations.Col.Kind"]" value="@Model.Kind.ToString()" options="Model.Kinds" />
+
+            @* a local folder: inside the storage root of the container *@
+            <md-field name="RootPath" kind="text" label="@L["Locations.Field.Folder.Local"]" value="@(Model.Kind == LocationKind.Local ? Model.RootPath : string.Empty)" maxlength="500" mono show-if="Kind" show-value="Local"
+                      hint="@L["Locations.Field.Folder.LocalHint", Model.StorageRoot]" autocomplete="off" />
+
+            @* WebDAV: the address of the share *@
+            <md-field name="Url" kind="url" label="@L["Locations.Field.Url"]" value="@Model.WebDavUrl" maxlength="500" mono show-if="Kind" show-value="WebDav"
+                      placeholder="https://cloud.example.com/remote.php/dav/files/anna/" hint="@L["Locations.Field.Url.Hint"]" autocomplete="off" />
+
+            @* SMB, SFTP, FTP: a server *@
+            <div class="mat-form__grid md-loc-server" data-show-if="Kind" data-show-value="Smb,Sftp,Ftp">
+                <md-field name="Host" label="@L["Locations.Field.Host"]" value="@Model.Host" maxlength="255" mono placeholder="nas.local" autocomplete="off" />
+                <md-field name="Port" kind="number" label="@L["Locations.Field.Port"]" value="@Model.Port" min="1" max="65535" optional hint="@L["Locations.Field.Port.Hint"]" inputmode="numeric" />
+            </div>
+            <md-field name="Share" label="@L["Locations.Field.Share"]" value="@Model.Share" maxlength="255" optional mono show-if="Kind" show-value="Smb" hint="@L["Locations.Field.Share.Hint"]" autocomplete="off" />
+            <md-field name="RootPath" id="RootPathRemote" label="@L["Locations.Field.Folder.Remote"]" value="@(Model.Kind == LocationKind.Local ? string.Empty : Model.RootPath)" maxlength="500" optional mono show-if="Kind" show-value="Smb,Sftp,Ftp"
+                      hint="@L["Locations.Field.Folder.RemoteHint"]" placeholder="/" autocomplete="off" />
+
+            @* the account (all but local) *@
+            <div class="mat-form__grid" data-show-if="Kind" data-show-value="Smb,Sftp,Ftp,WebDav">
+                <md-field name="Username" label="@L["Locations.Field.User"]" value="@Model.Username" maxlength="255" optional autocomplete="off" />
+                <md-field name="Domain" label="@L["Locations.Field.Domain"]" value="@Model.Domain" maxlength="255" optional show-if="Kind" show-value="Smb" autocomplete="off" />
+            </div>
+            <div data-show-if="Kind" data-show-value="Sftp">
+                <md-field name="UseKey" kind="radios" label="@L["Locations.Field.Auth"]" value="@(Model.UseKey ? "true" : "false")" options="Model.AuthChoices" />
+            </div>
+            <div data-show-if="Kind" data-show-value="Sftp">
+                <md-field name="PrivateKey" kind="textarea" label="@L["Locations.Field.Key"]" rows="5" mono show-if="UseKey" show-value="true" maxlength="12000"
+                          hint="@(Model.HasPrivateKey ? L["Locations.Field.Key.Stored"].Value : L["Locations.Field.Key.Hint"].Value)" placeholder="-----BEGIN OPENSSH PRIVATE KEY-----" />
+            </div>
+            <div data-show-if="Kind" data-show-value="Smb,Sftp,Ftp,WebDav">
+                <md-field name="Password" kind="password" label="@L["Locations.Field.Password"]" optional autocomplete="new-password" maxlength="1000" hint="@secretHint" />
+                @if (Model.HasPassword)
+                {
+                    <md-field name="ClearPassword" kind="check" label="@L["Locations.Field.ClearPassword"]" value="@Model.ClearPassword.ToString()" />
+                }
+            </div>
+            <md-field name="UseTls" kind="switch" label="@L["Locations.Field.Tls"]" value="@Model.UseTls.ToString()" show-if="Kind" show-value="Ftp" />
+            <md-field name="AcceptAnyCertificate" kind="switch" label="@L["Locations.Field.AnyCertificate"]" value="@Model.AcceptAnyCertificate.ToString()" show-if="Kind" show-value="Ftp,WebDav" />
+        </div>
+    </div>
+
+    <div class="mat-card">
+        <div class="mat-card__head"><h2 class="mat-card__title">@Ui.Icon("settings")@L["Locations.Use"]</h2></div>
+        <div class="mat-card__body mat-form">
+            <md-field name="IsActive" kind="switch" label="@L["Locations.Field.Active"]" value="@Model.IsActive.ToString()" hint="@L["Locations.Field.Active.Hint"]" />
+            <md-field name="IsReadOnly" kind="switch" label="@L["Locations.Field.ReadOnly"]" value="@Model.IsReadOnly.ToString()" hint="@L["Locations.Field.ReadOnly.Hint"]" />
+            <md-field name="Note" kind="textarea" label="@L["Locations.Field.Note"]" value="@Model.Note" rows="3" maxlength="1000" optional />
+        </div>
+    </div>
+
+    @if (Model.Tested is { } tested)
+    {
+        if (tested.Reachable)
+        {
+            <div class="mat-alert mat-alert--success" role="status">@Ui.Icon("check-circle")<div class="mat-alert__body"><strong>@L["Locations.Test.Ok"]</strong>@if (tested.Space is { } s) { <span> @L["Locations.SpaceFree", Ui.Bytes(s.Free), Ui.Bytes(s.Total)]</span> }</div></div>
+        }
+        else
+        {
+            <div class="mat-alert mat-alert--danger" role="alert">@Ui.Icon("x-circle")<div class="mat-alert__body"><strong>@L["Locations.Test.Failed"]</strong> <span>@tested.Message</span></div></div>
+        }
+    }
+    else if (Model.TestError is { } testError)
+    {
+        <div class="mat-alert mat-alert--danger" role="alert">@Ui.Icon("x-circle")<div class="mat-alert__body"><strong>@L["Locations.Test.Failed"]</strong> <span>@testError</span></div></div>
+    }
+
+    <md-buttons save="@L[Model.IsNew ? "Locations.Create" : "Common.Save"]" back="/Admin/Locations" delete-handler="@(Model.IsNew ? null : "Delete")" delete-label="@L["Locations.Delete"]"
+                delete-confirm="@L["Locations.DeleteConfirm", Model.Title]">
+        <button type="submit" class="mat-btn mat-btn--secondary md-btn-collapse" formaction="@Model.HandlerUrl("Test")" formnovalidate aria-label="@L["Locations.Test"]" data-tip="@L["Locations.Test"]">@Ui.Icon("plug")<span>@L["Locations.Test"]</span></button>
+    </md-buttons>
+</form>

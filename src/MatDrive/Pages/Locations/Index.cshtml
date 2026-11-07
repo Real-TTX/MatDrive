@@ -1,0 +1,172 @@
+@page "/locations/{id:long}/{**path}"
+@model MatDrive.Pages.Locations.IndexModel
+@using MatDrive.Services.Locations
+@{
+    ViewData["Title"] = Model.Title;
+    ViewData["Crumbs"] = Model.Crumbs;
+    ViewData["Width"] = "wide";
+    ViewData["PageSub"] = Model.CanEdit ? null : L[Model.Location.IsReadOnly ? "Locations.ReadOnly.Sub" : "Locations.Viewer.Sub"].Value;
+    var space = Model.Status?.Space;
+    var empty = Model.Folder.Items.Count == 0;
+}
+@section Head {
+    <link rel="stylesheet" href="~/css/locations.css" asp-append-version="true" />
+}
+
+@section TopActions {
+    <button type="button" class="mat-btn mat-btn--secondary mat-btn--icon" data-loc-search aria-label="@L["Locations.Search.Deep"]" data-tip="@L["Locations.Search.Deep"]">@Ui.Icon("search")</button>
+    <button type="button" class="mat-btn mat-btn--secondary mat-btn--icon" data-loc-props aria-label="@L["Locations.Properties.Folder"]" data-tip="@L["Locations.Properties.Folder"]">@Ui.Icon("info")</button>
+    @if (Model.IsAdmin)
+    {
+        <a class="mat-btn mat-btn--secondary mat-btn--icon" href="/Admin/Locations/Edit?id=@Model.Id" aria-label="@L["Locations.Settings"]" data-tip="@L["Locations.Settings"]">@Ui.Icon("settings")</a>
+    }
+}
+
+<div class="md-explorer mat-list md-loc" id="md-loc-explorer" data-view-scope data-selectable
+     data-location="@Model.Id" data-path="@Model.DisplayPath" data-location-name="@Model.Location.Name" data-kind="@Model.Location.Kind.ToString().ToLowerInvariant()"
+     data-can-edit="@(Model.CanEdit ? "true" : "false")" data-permissions="@(Model.Folder.Context.Provider.HasPermissions ? "true" : "false")">
+    <partial name="_Toolbar" model="Model.Toolbar" />
+
+    @* what is selected: the actions for several entries at once *@
+    <div class="mat-bulk md-bulk" data-bulk-bar hidden>
+        <span class="mat-bulk__count"><span data-bulk-count>0</span> @L["Locations.Selected"]</span>
+        <button type="button" class="mat-btn mat-btn--secondary mat-btn--sm" data-act="download">@Ui.Icon("download")<span>@L["Locations.Download"]</span></button>
+        @if (Model.CanEdit)
+        {
+            <button type="button" class="mat-btn mat-btn--secondary mat-btn--sm" data-act="move">@Ui.Icon("folder-move")<span>@L["Locations.Move"]</span></button>
+        }
+        <button type="button" class="mat-btn mat-btn--secondary mat-btn--sm" data-act="copy">@Ui.Icon("copy")<span>@L["Locations.Copy"]</span></button>
+        <button type="button" class="mat-btn mat-btn--secondary mat-btn--sm" data-act="to-drive">@Ui.Icon("hard-drive")<span>@L["Locations.ToDrive"]</span></button>
+        @if (Model.CanEdit)
+        {
+            <button type="button" class="mat-btn mat-btn--danger mat-btn--sm md-sep" data-act="delete">@Ui.Icon("trash")<span>@L["Locations.Delete.Items"]</span></button>
+        }
+    </div>
+
+    @if (Model.Folder.Error is { } error)
+    {
+        <div class="mat-alert mat-alert--danger md-loc-error" role="alert">
+            @Ui.Icon("x-circle")
+            <div class="mat-alert__body">
+                <strong>@L["Locations.Error.Title"]</strong>
+                <p>@error</p>
+                <div class="mat-btn-row mat-btn-row--plain">
+                    <a class="mat-btn mat-btn--secondary mat-btn--sm" href="@Model.Toolbar.Action">@Ui.Icon("refresh")<span>@L["Locations.Retry"]</span></a>
+                    @if (Model.Folder.Path.Length > 0)
+                    {
+                        <a class="mat-btn mat-btn--ghost mat-btn--sm" href="@IndexModel.BrowseUrl(Model.Id, string.Empty)">@Ui.Icon("folder-open")<span>@L["Locations.ToTop"]</span></a>
+                    }
+                </div>
+            </div>
+        </div>
+    }
+    else if (empty)
+    {
+        var searching = Model.Toolbar.SearchActive || Model.Toolbar.ActiveFilters > 0;
+        <div class="md-dropzone-host">
+            <partial name="_Empty" model="@(new EmptyStateModel("folder-open", L[searching ? "Locations.NoMatch" : "Locations.Folder.Empty"].Value,
+                L[searching ? "Lists.ChangeTools" : Model.CanEdit ? "Locations.Folder.EmptyText" : "Locations.Folder.EmptyReadOnly"].Value, !searching, null, null, Model.Toolbar.UrlReset()))" />
+        </div>
+    }
+    else
+    {
+        <div class="md-dropzone-host" data-view="list">
+            <md-table caption="@Model.Title">
+                <thead>
+                    <tr>
+                        <th scope="col" class="mat-table__check"><input type="checkbox" class="mat-check__input" data-select-all aria-label="@L["Locations.SelectAll"]" /></th>
+                        <th scope="col">@L["Common.Name"]</th>
+                        <th scope="col" class="mat-hide-sm">@L["Locations.Col.Modified"]</th>
+                        <th scope="col" class="mat-num mat-hide-sm">@L["Locations.Col.Size"]</th>
+                        <th scope="col"><span class="mat-sr-only">@L["Common.Actions"]</span></th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var e in Model.Folder.Items)
+                    {
+                        var cat = IndexModel.CategoryOf(e);
+                        var display = PathGuard.Display(e.Path);
+                        <tr data-entry data-path="@display" data-kind="@(e.IsFolder ? "folder" : "file")" data-name="@e.Name" data-category="@cat" data-preview="@IndexModel.PreviewOf(e)"
+                            data-text="@(IndexModel.IsText(e) ? "1" : null)" data-size="@e.Size" data-drop-folder="@(e.IsFolder && Model.CanEdit ? display : null)" draggable="@(Model.CanEdit ? "true" : "false")">
+                            <td class="mat-table__check"><input type="checkbox" class="mat-check__input" data-select-row value="@display" aria-label="@L["Locations.SelectNamed", e.Name]" /></td>
+                            <td data-label="@L["Common.Name"]" class="mat-table__primary">
+                                <a class="md-name" href="@Model.HrefOf(e)" data-open>
+                                    <span class="md-ficon md-ficon--@cat">@Ui.Icon(FileTypes.IconOf(cat))</span>
+                                    <span class="md-name__text">@e.Name</span>
+                                    @if (e.IsLink) { @Ui.Icon("link", "md-mark") }
+                                </a>
+                            </td>
+                            <td data-label="@L["Locations.Col.Modified"]" class="mat-mono mat-hide-sm">@Model.Stamp(e.Modified)</td>
+                            <td data-label="@L["Locations.Col.Size"]" class="mat-num mat-mono mat-hide-sm">@(e.IsFolder ? "–" : Ui.Bytes(e.Size))</td>
+                            <td class="mat-table__cell-actions">
+                                <div class="mat-table__actions">
+                                    @if (!e.IsFolder)
+                                    {
+                                        <a class="mat-btn mat-btn--ghost mat-btn--icon mat-btn--sm" href="@IndexModel.ContentUrl(Model.Id, e.Path, download: true)" aria-label="@L["Locations.DownloadNamed", e.Name]" data-tip="@L["Locations.Download"]">@Ui.Icon("download")</a>
+                                    }
+                                    <button type="button" class="mat-btn mat-btn--ghost mat-btn--icon mat-btn--sm" data-row-menu aria-haspopup="menu" aria-label="@L["Locations.MoreNamed", e.Name]" data-tip="@L["Locations.More"]">@Ui.Icon("more-vertical")</button>
+                                </div>
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </md-table>
+        </div>
+
+        <div class="md-dropzone-host" data-view="gallery" hidden>
+            <div class="mat-gallery md-gallery">
+                @foreach (var e in Model.Folder.Items)
+                {
+                    var cat = IndexModel.CategoryOf(e);
+                    var display = PathGuard.Display(e.Path);
+                    var thumb = !e.IsFolder && cat == "image" && e.Size <= 8 * 1024 * 1024 && IndexModel.PreviewOf(e) == "image";
+                    <div class="mat-tile md-tile" data-select-item data-entry data-path="@display" data-kind="@(e.IsFolder ? "folder" : "file")" data-name="@e.Name" data-category="@cat"
+                         data-preview="@IndexModel.PreviewOf(e)" data-text="@(IndexModel.IsText(e) ? "1" : null)" data-size="@e.Size" data-drop-folder="@(e.IsFolder && Model.CanEdit ? display : null)"
+                         draggable="@(Model.CanEdit ? "true" : "false")">
+                        <a class="md-tile__link" href="@Model.HrefOf(e)" data-open>
+                            <span class="mat-tile__media md-tile__media md-ficon--@cat">
+                                @if (thumb)
+                                {
+                                    <img src="@IndexModel.ContentUrl(Model.Id, e.Path)" alt="" loading="lazy" width="320" height="240" draggable="false" />
+                                }
+                                else
+                                {
+                                    @Ui.Icon(FileTypes.IconOf(cat), "md-tile__icon")
+                                }
+                            </span>
+                            <span class="mat-tile__body">
+                                <span class="mat-tile__title">@e.Name</span>
+                                <span class="mat-tile__meta">@(e.IsFolder ? L["Locations.Category.folder"].Value : Ui.Bytes(e.Size)) · @Model.Stamp(e.Modified)</span>
+                            </span>
+                        </a>
+                        <input type="checkbox" class="mat-check__input md-tile__check" data-select-row value="@display" aria-label="@L["Locations.SelectNamed", e.Name]" />
+                    </div>
+                }
+            </div>
+        </div>
+    }
+
+    <partial name="_Pager" model="Model.Pager" />
+
+    <div class="mat-actions md-loc-actions">
+        @if (Model.CanEdit && Model.Folder.Error is null)
+        {
+            <button type="button" class="mat-btn mat-btn--primary" data-new="files">@Ui.Icon("upload")<span>@L["Locations.UploadFiles"]</span></button>
+            <button type="button" class="mat-btn mat-btn--secondary" data-new="folder">@Ui.Icon("folder-plus")<span>@L["Locations.NewFolder"]</span></button>
+            <button type="button" class="mat-btn mat-btn--secondary mat-hide-sm" data-new="dir">@Ui.Icon("folder-upload")<span>@L["Locations.UploadFolder"]</span></button>
+            <button type="button" class="mat-btn mat-btn--secondary mat-hide-sm" data-loc-from-drive>@Ui.Icon("hard-drive")<span>@L["Locations.FromDrive"]</span></button>
+        }
+        @if (space is not null)
+        {
+            <span class="mat-btn-row__spacer"></span>
+            <div class="md-loc-space" title="@L["Locations.SpaceFree", Ui.Bytes(space.Free), Ui.Bytes(space.Total)]">
+                <div class="mat-meter mat-meter--sm"><div class="mat-meter__fill" data-value="@Math.Round(space.Share * 100)" data-tone="@(space.Share > 0.9 ? "error" : space.Share > 0.75 ? "warn" : "ok")"></div></div>
+                <span>@L["Locations.SpaceFreeShort", Ui.Bytes(space.Free)]</span>
+            </div>
+        }
+    </div>
+</div>
+
+@section Scripts {
+    <script type="module" src="~/js/locations.js" asp-append-version="true"></script>
+}

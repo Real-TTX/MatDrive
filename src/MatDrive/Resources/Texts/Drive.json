@@ -48,6 +48,7 @@
   "Drive.MoreNamed": { "en": "More for {0}", "de": "Mehr zu {0}" },
   "Drive.Move": { "en": "Move", "de": "Verschieben" },
   "Drive.Copy": { "en": "Copy", "de": "Kopieren" },
+  "Drive.CopyToLocation": { "en": "Copy to storage location", "de": "In Speicherort kopieren" },
   "Drive.Star": { "en": "Star", "de": "Markieren" },
   "Drive.MoveToTrash": { "en": "Move to trash", "de": "In den Papierkorb" },
   "Drive.Restore": { "en": "Restore", "de": "Wiederherstellen" },

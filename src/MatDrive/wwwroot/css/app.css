@@ -191,6 +191,8 @@ html { -webkit-text-size-adjust: 100%; text-size-adjust: 100%; }
 .md-uploads__bar { grid-column: 1 / -1; width: 100%; height: 4px; accent-color: var(--mat-accent); }
 .md-uploads__state .mat-icon { width: 16px; height: 16px; color: var(--mat-success-text, var(--mat-accent-text)); }
 .md-uploads li.is-failed .md-uploads__state { color: var(--mat-danger-text); }
+/* the panel of a long operation (same place as the uploads; util.busy) */
+.md-busy .md-uploads__head { justify-content: flex-start; border-bottom: 0; padding-block: var(--mat-space-3); }
 
 /* the preview */
 .md-preview { width: 100vw; height: 100dvh; max-width: none; max-height: none; margin: 0; padding: 0; border: 0; background: rgba(18, 18, 20, .96); color: #f3f2ee; }
@@ -226,6 +228,7 @@ html { -webkit-text-size-adjust: 100%; text-size-adjust: 100%; }
 .md-picker__item .mat-icon:first-child { color: var(--md-t-folder); }
 .md-picker__item .mat-icon[data-colour] { color: var(--mat-swatch); }
 .md-picker__chev.mat-icon { margin-left: auto; width: 16px; height: 16px; color: var(--mat-text-muted); }
+.md-picker__new { align-self: flex-start; }
 
 /* the space used, at the foot of the menu */
 .md-usage { display: flex; flex-direction: column; gap: 6px; padding: var(--mat-space-3) var(--mat-space-4) var(--mat-space-2); }

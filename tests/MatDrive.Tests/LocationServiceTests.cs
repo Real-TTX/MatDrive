@@ -113,12 +113,14 @@ public sealed class LocationServiceTests
         Assert.Null(await LocationService.BrowseAsync(t.Db, bed.Connections, bob.Id, id, null, All));
         Assert.Null(await LocationService.BrowseAsync(t.Db, bed.Connections, admin.Id, id, null, All));
         Assert.Empty(await LocationAccess.ListForMenuAsync(t.Db, bob.Id));
+        Assert.False(await LocationAccess.CanWriteAnyAsync(t.Db, bob.Id));
 
-        // everyone may look
+        // everyone may look (the explorer of the drives offers no copy to it)
         Assert.True(await LocationAdmin.SetEveryoneAsync(t.Db, admin.Id, id, AccessRole.Viewer));
         var folder = await LocationService.BrowseAsync(t.Db, bed.Connections, bob.Id, id, null, All);
         Assert.Equal("a.txt", Assert.Single(folder!.Items).Name);
         Assert.False(folder.Context.CanEdit);
+        Assert.False(await LocationAccess.CanWriteAnyAsync(t.Db, bob.Id));
         Assert.True((await Upload(t.Db, bed, bob.Id, id, "b.txt")).NotAllowed);
         Assert.True((await LocationService.DeleteAsync(t.Db, bed.Connections, bob.Id, id, ["a.txt"])).NotAllowed);
         Assert.True((await LocationService.RenameAsync(t.Db, bed.Connections, bob.Id, id, "a.txt", "c.txt")).NotAllowed);
@@ -128,12 +130,18 @@ public sealed class LocationServiceTests
         Assert.True((await LocationAdmin.AddPersonAsync(t.Db, admin.Id, id, "BOB@example.com ", AccessRole.Editor)).Ok);
         Assert.Null((await Upload(t.Db, bed, bob.Id, id, "b.txt")).Error);
         Assert.True(File.Exists(Path.Combine(bed.Files, "b.txt")));
+        Assert.True(await LocationAccess.CanWriteAnyAsync(t.Db, bob.Id));
+        Assert.False(await LocationAccess.CanWriteAnyAsync(t.Db, admin.Id));
 
-        // read-only: nobody is more than Viewer
+        // read-only: nobody is more than Viewer, and a copy from the drive is refused like any write
         var detail = (await LocationAdmin.GetAsync(t.Db, bed.Connections, admin.Id, id))!;
         await bed.SaveAsync(t.Db, admin.Id, id, bed.Local(detail.Name, detail.RootPath) with { IsReadOnly = true });
         Assert.True((await Upload(t.Db, bed, bob.Id, id, "c.txt")).NotAllowed);
         Assert.Equal(AccessRole.Viewer, (await LocationAccess.ListForPersonAsync(t.Db, bob.Id)).Single().Role);
+        Assert.False(await LocationAccess.CanWriteAnyAsync(t.Db, bob.Id));
+        var mine = await FileService.UploadAsync(t.Db, bed.Store, Actor.Of(bob.Id), (await DriveService.MyDriveAsync(t.Db, bob.Id)).Id, null, "d.txt", new MemoryStream("d"u8.ToArray()));
+        Assert.True((await LocationService.FromDriveAsync(t.Db, bed.Connections, bed.Store, bob.Id, id, [mine.Value!.Id], "/")).NotAllowed);
+        Assert.False(File.Exists(Path.Combine(bed.Files, "d.txt")));
 
         // switched off: gone for everybody
         await bed.SaveAsync(t.Db, admin.Id, id, bed.Local(detail.Name, detail.RootPath) with { IsActive = false });
@@ -224,6 +232,12 @@ public sealed class LocationServiceTests
         Assert.True(back.Ok, back.Error);
         Assert.Equal("notes", File.ReadAllText(Path.Combine(bed.Files, "photos", "2026", "notes.txt")));
         Assert.Equal("picture", File.ReadAllText(Path.Combine(bed.Files, "photos", "2026", "photos", "2026", "a.txt")));
+
+        // again into the same folder: the names that are taken get a number, nothing is overwritten
+        Assert.Equal(2, (await LocationService.FromDriveAsync(t.Db, bed.Connections, bed.Store, bob.Id, id, [notes.Id, photos.Id], "/photos/2026")).Value);
+        Assert.Equal("notes", File.ReadAllText(Path.Combine(bed.Files, "photos", "2026", "notes (2).txt")));
+        Assert.Equal("picture", File.ReadAllText(Path.Combine(bed.Files, "photos", "2026", "photos (2)", "2026", "a.txt")));
+        Assert.Equal("notes", File.ReadAllText(Path.Combine(bed.Files, "photos", "2026", "notes.txt")));
 
         // a node Bob may not see is refused
         var secret = await FileService.UploadAsync(t.Db, bed.Store, Actor.Of(admin.Id), ada.Id, null, "secret.txt", new MemoryStream("s"u8.ToArray()));

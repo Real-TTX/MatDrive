@@ -104,6 +104,14 @@ export function toast(message, tone = 'info') {
   if (window.MatUi?.toast) window.MatUi.toast(message, { tone });
 }
 
+/** A panel at the bottom right while a long operation runs (copies to and between servers, unzip, delete of a large folder); the answer removes it. */
+export function busy(label) {
+  const node = el('section', { class: 'md-uploads md-busy', role: 'status', 'aria-live': 'polite' },
+    el('div', { class: 'md-uploads__head' }, el('span', { class: 'mat-spinner mat-spinner--sm', 'aria-hidden': 'true' }), el('strong', { class: 'md-uploads__title', text: label })));
+  document.body.append(node);
+  return () => node.remove();
+}
+
 /** A file download made in the browser. */
 export function download(name, data, type) {
   const blob = data instanceof Blob ? data : new Blob([data], { type });

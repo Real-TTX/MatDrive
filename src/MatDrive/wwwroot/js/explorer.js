@@ -1,8 +1,8 @@
 /* MatDrive – the explorer (Pages/Drive/Index): uploads (files and whole folders, by button and by drag & drop, large files in pieces, with progress), the menu of a
    row (also the right mouse button), the actions for the selection, the preview of files (with the previous and next file), moving and copying with a folder
-   picker, renaming, new folders and new documents of MatOffice. Every change goes to /live/drive (business layer); the list is drawn by the server and loaded
-   again after a change. */
-import { t, el, icon, request, toast, dialog, token } from './util.js';
+   picker (also copying into a folder of a storage location), renaming, new folders and new documents of MatOffice. Every change goes to /live/drive (business
+   layer; a copy to a storage location to /live/locations); the list is drawn by the server and loaded again after a change. */
+import { t, el, icon, request, toast, dialog, token, busy } from './util.js';
 
 const root = document.getElementById('md-explorer');
 const SMALL = 8 * 1024 * 1024;
@@ -13,6 +13,7 @@ const ctx = root ? {
   folder: root.dataset.folder ? Number(root.dataset.folder) : null,
   mode: root.dataset.mode,
   canAdd: root.dataset.canAdd === 'true',
+  toLocation: root.dataset.toLocation === 'true',
   office: JSON.parse(root.dataset.office || '[]'),
 } : null;
 
@@ -381,6 +382,7 @@ function rowMenu(item, anchor, x, y) {
     ['edit', t('Drive.Rename'), () => rename(item)],
     ['folder-move', t('Drive.MoveTo'), () => pick('move', [item.id])],
     ['copy', t('Drive.CopyTo'), () => pick('copy', [item.id])],
+    ctx.toLocation ? ['server', t('Drive.CopyToLocation'), () => pick('location', [item.id])] : null,
     [item.starred ? 'star-filled' : 'star', t(item.starred ? 'Drive.Unstar' : 'Drive.Star'), () => act('/live/drive/star', { id: item.id, starred: !item.starred })],
     item.name.toLowerCase().endsWith('.zip') ? ['archive', t('Drive.Unzip'), () => act('/live/drive/unzip', { id: item.id }, r => t('Drive.Unzipped', r.name))] : null,
     '-',
@@ -431,6 +433,7 @@ async function bulk(action, ids) {
     case 'download': return download(ids);
     case 'move': return pick('move', ids);
     case 'copy': return pick('copy', ids);
+    case 'to-location': return pick('location', ids);
     case 'star':
       for (const id of ids) { try { await request('POST', '/live/drive/star', { id, starred: true }); } catch { /* the others still */ } }
       return reload(t('Drive.StarredCount', ids.length));
@@ -464,45 +467,98 @@ async function rename(item) {
   await act('/live/drive/rename', { id: item.id, name }, r => t('Drive.Renamed', r.name));
 }
 
-// ---- the folder picker (move / copy) ------------------------------------------------------------------------------------------
+// ---- the folder picker (move / copy in the drives, copy to a storage location) --------------------------------------------------
 
+/**
+ * Where the picker puts things: a folder of a drive (by id) or of a storage location the person may change (by path, the business layer of the locations).
+ * Each source lists its places, the folders below a folder (null = the top) and makes a new folder there.
+ */
+const sources = {
+  drive: {
+    label: 'Drive.Picker.Drive', icon: 'hard-drive',
+    places: () => request('GET', '/live/drive/drives'),
+    folders: (place, at) => request('GET', `/live/drive/tree?driveId=${place.id}${at ? '&parentId=' + at.id : ''}`),
+    create: (place, at, name) => request('POST', '/live/drive/folders', { driveId: place.id, parentId: at ? at.id : null, name }),
+  },
+  location: {
+    label: 'Drive.Picker.Location', icon: 'server',
+    places: async () => (await request('GET', '/live/locations/targets')).filter(l => l.canEdit),
+    folders: (place, at) => request('GET', `/live/locations/${place.id}/folders?path=${encodeURIComponent(at ? at.path : '/')}`),
+    create: (place, at, name) => request('POST', `/live/locations/${place.id}/folders`, { path: at ? at.path : '/', name }),
+  },
+};
+
+/** Move or copy items into a folder of a drive ('move', 'copy'), or copy them into a folder of a storage location ('location'). */
 async function pick(action, ids) {
-  let drives;
-  try { drives = await request('GET', '/live/drive/drives'); } catch (e) { toast(problem(e), 'danger'); return; }
-  const state = { drive: drives.find(d => d.id === ctx.drive) || drives[0], path: [] };
+  const toLocation = action === 'location';
+  const source = toLocation ? sources.location : sources.drive;
+  let places;
+  try { places = await source.places(); } catch (e) { toast(problem(e), 'danger'); return; }
+  if (!places.length) { toast(t(toLocation ? 'Drive.Picker.NoLocations' : 'Drive.NotAllowed'), 'danger'); return; }
+  const state = { place: (!toLocation && places.find(p => p.id === ctx.drive)) || places[0], path: [] };
+  const at = () => (state.path.length ? state.path[state.path.length - 1] : null);
   const crumbs = el('nav', { class: 'md-picker__crumbs', 'aria-label': t('Drive.Picker.Where') });
   const list = el('ul', { class: 'md-picker__list', role: 'listbox', 'aria-label': t('Drive.Picker.Folders') });
-  const driveSelect = el('select', { class: 'mat-input', 'aria-label': t('Drive.Picker.Drive') }, ...drives.map(d => el('option', { value: d.id, text: d.name })));
-  driveSelect.value = state.drive.id;
-  driveSelect.addEventListener('change', () => { state.drive = drives.find(d => d.id === Number(driveSelect.value)); state.path = []; draw(); });
+  const select = el('select', { class: 'mat-input', 'aria-label': t(source.label) }, ...places.map(p => el('option', { value: p.id, text: p.name })));
+  select.value = state.place.id;
+  select.addEventListener('change', () => { state.place = places.find(p => p.id === Number(select.value)); state.path = []; draw(); });
 
   async function draw() {
-    const parent = state.path.length ? state.path[state.path.length - 1].id : null;
     crumbs.replaceChildren(
-      el('button', { type: 'button', class: 'md-picker__crumb', onclick: () => { state.path = []; draw(); } }, icon('hard-drive'), el('span', { text: state.drive.name })),
+      el('button', { type: 'button', class: 'md-picker__crumb', onclick: () => { state.path = []; draw(); } }, icon(source.icon), el('span', { text: state.place.name })),
       ...state.path.flatMap((p, i) => [el('span', { class: 'md-picker__sep', text: '›' }), el('button', { type: 'button', class: 'md-picker__crumb', onclick: () => { state.path = state.path.slice(0, i + 1); draw(); } }, el('span', { text: p.name }))]));
     list.replaceChildren(el('li', { class: 'md-muted', text: t('Drive.Loading') }));
     try {
-      const folders = await request('GET', `/live/drive/tree?driveId=${state.drive.id}${parent ? '&parentId=' + parent : ''}`);
-      const usable = folders.filter(f => !ids.includes(f.id));
-      list.replaceChildren(...(usable.length ? usable.map(f => el('li', {}, el('button', { type: 'button', class: 'md-picker__item', onclick: () => { state.path.push(f); draw(); } },
-        icon('folder', null), el('span', { text: f.name }), icon('chevron-right', 'md-picker__chev')))) : [el('li', { class: 'md-muted', text: t('Drive.Picker.NoFolders') })]));
-      list.querySelectorAll('.mat-icon').forEach((svg, i) => { const c = usable[i]?.colour; if (c) svg.setAttribute('data-colour', c); });
+      const folders = await source.folders(state.place, at());
+      // a folder that is moved or copied inside the drives is not a place to put it
+      const usable = toLocation ? folders : folders.filter(f => !ids.includes(f.id));
+      list.replaceChildren(...(usable.length ? usable.map(f => {
+        const folderIcon = icon('folder');
+        if (f.colour) folderIcon.setAttribute('data-colour', f.colour);
+        return el('li', {}, el('button', { type: 'button', class: 'md-picker__item', onclick: () => { state.path.push(f); draw(); } }, folderIcon, el('span', { text: f.name }), icon('chevron-right', 'md-picker__chev')));
+      }) : [el('li', { class: 'md-muted', text: t('Drive.Picker.NoFolders') })]));
       window.MatUi.refresh(list);
     } catch (e) {
-      list.replaceChildren(el('li', { text: problem(e) }));
+      list.replaceChildren(el('li', { class: 'md-muted', text: problem(e) }));
     }
   }
 
+  // a new folder where the picker stands, entered at once
+  const create = async () => {
+    const name = await window.MatUi.prompt(t('Drive.NewFolder.Label'), { title: t('Drive.NewFolder'), value: t('Drive.NewFolder.Default'), ok: t('Drive.Create') });
+    if (!name) return;
+    try {
+      state.path.push(await source.create(state.place, at(), name));
+      draw();
+    } catch (e) {
+      toast(problem(e), 'danger');
+    }
+  };
+
   draw();
-  const body = el('div', { class: 'md-picker' }, drives.length > 1 ? el('div', { class: 'mat-field' }, el('label', { class: 'mat-label', text: t('Drive.Picker.Drive') }), driveSelect) : null, crumbs, list);
+  const body = el('div', { class: 'md-picker' }, places.length > 1 ? el('div', { class: 'mat-field' }, el('label', { class: 'mat-label', text: t(source.label) }), select) : null, crumbs, list,
+    el('button', { type: 'button', class: 'mat-btn mat-btn--secondary mat-btn--sm md-picker__new', onclick: create }, icon('folder-plus'), el('span', { text: t('Drive.NewFolder') })));
   const choice = await dialog({
-    title: t(action === 'move' ? 'Drive.MoveTo' : 'Drive.CopyTo'), icon: action === 'move' ? 'folder-move' : 'copy', body, size: 'md',
+    title: t(toLocation ? 'Drive.CopyToLocation' : action === 'move' ? 'Drive.MoveTo' : 'Drive.CopyTo'), icon: toLocation ? 'server' : action === 'move' ? 'folder-move' : 'copy', body, size: 'md',
     buttons: [{ label: t(action === 'move' ? 'Drive.MoveHere' : 'Drive.CopyHere'), value: 'ok', kind: 'primary' }, { label: t('Drive.Cancel'), value: 'cancel' }],
   });
   if (choice !== 'ok') return;
-  const parentId = state.path.length ? state.path[state.path.length - 1].id : null;
-  await act('/live/drive/' + action, { ids, driveId: state.drive.id, parentId }, r => t(action === 'move' ? 'Drive.Moved' : 'Drive.Copied', r.count));
+  if (toLocation) { await copyToLocation(ids, state.place, at(), [state.place.name, ...state.path.map(p => p.name)].join(' › ')); return; }
+  await act('/live/drive/' + action, { ids, driveId: state.place.id, parentId: at()?.id ?? null }, r => t(action === 'move' ? 'Drive.Moved' : 'Drive.Copied', r.count));
+}
+
+/** Copies items (files and folders with everything in them) into a folder of a storage location; the list of the drive stays as it is. */
+async function copyToLocation(ids, place, folder, where) {
+  const stop = busy(t('Drive.Busy.Copying'));
+  try {
+    const r = await request('POST', `/live/locations/${place.id}/from-drive`, { ids, path: folder ? folder.path : '/' });
+    stop();
+    toast(t('Drive.CopiedToLocation', r.count, where), 'success');
+  } catch (e) {
+    stop();
+    // "not found" here is the location that may not be changed (read-only meanwhile, or the right is gone); the server words its own errors
+    toast(e.status === 404 ? t('Drive.ToLocation.Refused') : problem(e), 'danger');
+  }
 }
 
 // ---- preview --------------------------------------------------------------------------------------------------------------------

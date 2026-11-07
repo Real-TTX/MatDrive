@@ -215,6 +215,55 @@ public static class FileService
         return (WriteStatus.Written, node, version);
     }
 
+    /// <summary>
+    /// Creates a new file of exactly this name in a folder or at the top of a drive (WebDAV PUT and LOCK of a new name). Answers <see cref="WriteStatus.Created"/>
+    /// with the node and its first version; <see cref="WriteStatus.Conflict"/> when the name is not allowed or already taken there (a file of that name gets a new
+    /// version through <see cref="WriteAsync"/> instead); <see cref="WriteStatus.Denied"/> without the right to add there; or the limits.
+    /// </summary>
+    public static async Task<(WriteStatus Status, Node? Node, NodeVersion? Version)> CreateAsync(AppDbContext db, BlobStore store, Actor actor, long driveId, long? parentId,
+        string name, Stream content, string source, CancellationToken ct = default)
+    {
+        var target = await NodeService.TargetAsync(db, actor, driveId, parentId, ct);
+        if (target is null)
+        {
+            return (WriteStatus.Denied, null, null);
+        }
+
+        var (drive, folder) = target.Value;
+        if (NodeService.CleanName(name) != name || await NodeService.ExistsAsync(db, drive, folder?.Id, name, null, ct))
+        {
+            return (WriteStatus.Conflict, null, null);
+        }
+
+        StoredBlob blob;
+        try
+        {
+            blob = await store.WriteAsync(content, await MaxUploadAsync(db, ct), ct);
+        }
+        catch (TooLargeException)
+        {
+            return (WriteStatus.TooLarge, null, null);
+        }
+
+        if (!await HasRoomAsync(db, drive, blob.Size, ct))
+        {
+            store.Delete(blob.BlobId);
+            return (WriteStatus.QuotaFull, null, null);
+        }
+
+        if (await NodeService.ExistsAsync(db, drive, folder?.Id, name, null, ct))
+        {
+            // somebody else made a file of that name while the bytes arrived
+            store.Delete(blob.BlobId);
+            return (WriteStatus.Conflict, null, null);
+        }
+
+        var node = await NodeService.AddNodeAsync(db, actor.UserId, drive, folder, NodeKind.File, name, ct);
+        await AddVersionAsync(db, store, actor.UserId, node, blob, source, ct, firstVersion: true);
+        var version = await db.NodeVersions.FirstAsync(v => v.Id == node.CurrentVersionId, ct);
+        return (WriteStatus.Created, node, version);
+    }
+
     /// <summary>A file (or one of its versions) for download or preview. Records the visit of a signed-in person.</summary>
     public static async Task<FileContent?> OpenAsync(AppDbContext db, BlobStore store, Actor actor, long nodeId, long? versionId = null, CancellationToken ct = default)
     {

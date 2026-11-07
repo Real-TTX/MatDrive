@@ -9,6 +9,7 @@ using MatDrive.Services;
 using MatDrive.Services.Files;
 using MatDrive.Services.Office;
 using MatDrive.Services.Mail;
+using MatDrive.Services.WebDav;
 using MatPlatform;
 using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.AspNetCore.Authorization;
@@ -55,6 +56,9 @@ builder.Services.AddSingleton<MailService>();
 builder.Services.AddSingleton<BlobStore>();
 builder.Services.AddHttpClient("office", c => c.Timeout = TimeSpan.FromSeconds(60));
 builder.Services.AddHostedService(sp => sp.GetRequiredService<MailService>());
+
+// WebDAV at /dav/ (Basic sign-in with an app password, locks in memory).
+builder.Services.AddWebDav();
 
 // The Mat platform contract (MatDesign docs/PLATFORM.md): /api, /api/health, /api/state, /api/configure, /api/actions with MAT_API_KEY or a token of MatIdentity.
 // The package MatPlatform (a copy in MatPlatform/) serves the endpoints; MatDrivePlatform describes MatDrive and supplies the values through the services.
@@ -204,6 +208,7 @@ app.MapPost("/language", async (HttpContext http, CurrentUser me, AppDbContext d
 app.MapGet("/health", async (AppDbContext db) => await db.Database.CanConnectAsync() ? Results.Ok("ok") : Results.StatusCode(503)).AllowAnonymous();
 app.MapFileEndpoints();
 app.MapLinkEndpoints();
+app.MapWebDav();
 app.MapMatPlatform();
 app.MapRazorPages();
 

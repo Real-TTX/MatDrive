@@ -11,6 +11,8 @@ the storage locations of a NAS, and office files that open in MatOffice. One con
 
 </div>
 
+![My Drive: folders and files, shared ones marked, the shared drives and the storage locations in the menu](docs/images/drive.png)
+
 ---
 
 ## What it does
@@ -28,6 +30,13 @@ the storage locations of a NAS, and office files that open in MatOffice. One con
 | **Administration** | People and their quota, the activity log, storage, integrations, system |
 
 English and German, light and dark, a phone layout, and an installable app (PWA); without a network the pages you opened can still be read.
+
+| | |
+|---|---|
+| ![A folder of photos in the picture view](docs/images/photos.png) | ![A shared drive of a team](docs/images/shared-drive.png) |
+| ![Sharing a file with people, and links](docs/images/sharing.png) | ![The versions of a file, the newest saved from MatOffice](docs/images/versions.png) |
+
+<p align="center"><img src="docs/images/phone.png" width="300" alt="The photos on a phone in dark mode" /></p>
 
 ## Quick start
 
@@ -86,6 +95,8 @@ MatOffice is the office suite of the family (Docs, Sheets, Slides, Base) and run
 After that, *New* offers a document, a spreadsheet, a presentation and a database, and office files open in MatOffice in a new tab. MatOffice reads and
 saves the file through a time-limited token of that one file; every save becomes a new version in MatDrive (saves of ten minutes count as one version).
 
+![An Excel file of MatDrive open in MatOffice: the MatDrive mark in the title bar, saving writes a new version](docs/images/office.png)
+
 ## Storage locations
 
 Folders of the server and shares of other machines, browsed live next to the drives – the functions of the sister app MatFile. An administrator adds
@@ -103,6 +114,8 @@ can be reached.
 
 In a location: upload (files and folders, also by drag & drop), download (a selection as zip), new folder, rename, delete, move and copy inside it and to
 another location, copy from and to My Drive or a shared drive, unzip, preview, the text editor, properties, search. Passwords and keys are kept encrypted.
+
+![A local folder of the server as a storage location, browsed live next to the drives](docs/images/storage.png)
 
 A local folder of the NAS goes into the `web` service of the compose file:
 

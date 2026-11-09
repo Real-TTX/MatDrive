@@ -483,23 +483,36 @@ public sealed class SystemSetting : Entity
     /// <summary>Older versions of a file (not marked "keep forever") are removed after these days; 0 = keep all.</summary>
     public int VersionDays { get; set; } = 90;
 
-    /// <summary>MatOffice: on/off and where it is.</summary>
+    // The office editor before the bindings of MatPlatform 2.0 (the old page Integrations): on/off, its addresses and its key. Read once at the start and moved
+    // into the binding office.edit entered by hand (OfficeService.MoveOldSettingsAsync), then cleared; the columns go in a later release.
+
+    /// <summary>Old (before the bindings): the integration was switched on.</summary>
     public bool OfficeEnabled { get; set; }
 
-    /// <summary>The address of MatOffice for the browser (https://office.example.com).</summary>
+    /// <summary>Old (before the bindings): the address of MatOffice for the browser.</summary>
     public string? OfficeUrl { get; set; }
 
-    /// <summary>The address under which MatDrive reaches MatOffice (inside Docker, e.g. http://matoffice-web:4820); empty = <see cref="OfficeUrl"/>.</summary>
+    /// <summary>Old (before the bindings): where MatDrive reached MatOffice.</summary>
     public string? OfficeInternalUrl { get; set; }
 
-    /// <summary>The API key MatOffice made for MatDrive, encrypted (DataProtection).</summary>
+    /// <summary>Old (before the bindings): the key MatOffice made for MatDrive, encrypted (DataProtection).</summary>
     public string? OfficeKeyProtected { get; set; }
 
-    /// <summary>The address under which MatOffice reaches MatDrive to read and write files; empty = the public address.</summary>
+    /// <summary>
+    /// The address under which other apps (the office editor) reach this MatDrive to read and write files, e.g. inside Docker; empty = the public address.
+    /// <c>MAT_INTERNAL_URL</c> wins over it.
+    /// </summary>
     public string? DriveUrlForOffice { get; set; }
 
-    /// <summary>What MatOffice answered on the last check (JSON of /api/v1/host/formats): which files it opens and writes.</summary>
+    /// <summary>What the office editor answered on the last fetch of its formats (JSON): which files it opens and writes.</summary>
     public string? OfficeFormats { get; set; }
 
+    /// <summary>When the formats were fetched the last time (or the fetch failed).</summary>
     public DateTime? OfficeCheckedDate { get; set; }
+
+    /// <summary>The mark of the binding the formats were fetched for (<c>OfficeService.Fingerprint</c>): formats of another binding are not used.</summary>
+    public string? OfficeFormatsBinding { get; set; }
+
+    /// <summary>Why the last fetch failed (a code, <c>OfficeService.ProblemText</c>); null after a fetch that worked.</summary>
+    public string? OfficeProblem { get; set; }
 }

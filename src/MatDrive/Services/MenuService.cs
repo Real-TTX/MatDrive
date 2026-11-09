@@ -25,7 +25,7 @@ public sealed class MenuModel
 /// <summary>One menu of the switcher at the foot of the menu.</summary>
 public sealed record MenuArea(string Id, string Title, string Icon);
 
-public sealed class MenuService(AppDbContext db, CurrentUser me)
+public sealed class MenuService(AppDbContext db, CurrentUser me, MatPlatform.MatBindings bindings)
 {
     private MenuModel? _model;
 
@@ -75,7 +75,7 @@ public sealed class MenuService(AppDbContext db, CurrentUser me)
             SharedDrives = shared.Select(d => (d.Id, d.Name, d.Colour)).ToList(),
             Locations = await LocationAccess.ListForMenuAsync(db, userId),
             Usage = await DriveService.UsageAsync(db, mine),
-            OfficeKinds = await OfficeService.ActiveKindsAsync(db),
+            OfficeKinds = await OfficeService.ActiveKindsAsync(db, bindings),
             Trash = trash,
         };
         return _model;

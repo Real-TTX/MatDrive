@@ -725,6 +725,10 @@ namespace MatDrive.Data.Migrations
                     b.Property<string>("OfficeFormats")
                         .HasColumnType("jsonb");
 
+                    b.Property<string>("OfficeFormatsBinding")
+                        .HasMaxLength(64)
+                        .HasColumnType("character varying(64)");
+
                     b.Property<string>("OfficeInternalUrl")
                         .HasMaxLength(300)
                         .HasColumnType("character varying(300)");
@@ -732,6 +736,10 @@ namespace MatDrive.Data.Migrations
                     b.Property<string>("OfficeKeyProtected")
                         .HasMaxLength(2000)
                         .HasColumnType("character varying(2000)");
+
+                    b.Property<string>("OfficeProblem")
+                        .HasMaxLength(200)
+                        .HasColumnType("character varying(200)");
 
                     b.Property<string>("OfficeUrl")
                         .HasMaxLength(300)

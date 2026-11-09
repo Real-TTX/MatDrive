@@ -53,9 +53,12 @@ builder.Services.AddHostedService<MaintenanceService>();
 // The mail through MatSMTP (only when the environment names it).
 builder.Services.AddSingleton<MailService>();
 
-// The bytes of the files (the data volume) and the calls to MatOffice.
+// The bytes of the files (the data volume) and the calls to the office editor (the capability office.edit): no redirects, so a sign-in page of a provider
+// that lacks an endpoint is an answer, not a document; the formats of the editor are kept fresh in the background.
 builder.Services.AddSingleton<BlobStore>();
-builder.Services.AddHttpClient("office", c => c.Timeout = TimeSpan.FromSeconds(60));
+builder.Services.AddHttpClient("office", c => c.Timeout = TimeSpan.FromSeconds(60))
+    .ConfigurePrimaryHttpMessageHandler(() => new SocketsHttpHandler { AllowAutoRedirect = false });
+builder.Services.AddHostedService<OfficeMonitor>();
 builder.Services.AddHostedService(sp => sp.GetRequiredService<MailService>());
 
 // The storage locations (local folders, SMB, SFTP, FTP, WebDAV): providers, pools of connections, the check of their reachability.
@@ -64,9 +67,17 @@ builder.Services.AddLocations();
 // WebDAV at /dav/ (Basic sign-in with an app password, locks in memory).
 builder.Services.AddWebDav();
 
-// The Mat platform contract (MatDesign docs/PLATFORM.md): /api, /api/health, /api/state, /api/configure, /api/actions with MAT_API_KEY or a token of MatIdentity.
-// The package MatPlatform (a copy in MatPlatform/) serves the endpoints; MatDrivePlatform describes MatDrive and supplies the values through the services.
-var platform = builder.AddMatPlatform<MatDrivePlatform>(MatDrivePlatform.Describe, o => o.DefaultLanguage = Languages.Default);
+// The Mat platform contract (MatDesign docs/PLATFORM.md, contract 2): /api, /api/health, /api/state, /api/configure, /api/actions with MAT_API_KEY or a token of
+// MatIdentity, the bindings of what MatDrive consumes (office.edit: MAT_OFFICE_EDIT_*, else entered by hand in Administration → Connections, kept in
+// /data/matplatform) and the contributions to a shell. The package MatPlatform (a copy in MatPlatform/) serves the endpoints; MatDrivePlatform describes MatDrive
+// and supplies the values through the services. MAT_PUBLIC_URL fixes the public address.
+var publicUrl = MatPlatformSettings.From(builder.Configuration, MatDrivePlatform.AppId).AppPublicUrl;
+var platform = builder.AddMatPlatform<MatDrivePlatform>(o => MatDrivePlatform.Describe(o, publicUrl), o =>
+{
+    o.DefaultLanguage = Languages.Default;
+    o.DataDirectory = dataDir;
+    o.ConnectionsAccess = http => Task.FromResult(http.User.IsInRole(nameof(UserRole.Admin)));
+});
 
 // The interface speaks English and German (MatDrive.Localization); every localizer reads the one catalog of JSON texts.
 builder.Services.AddSingleton<Microsoft.Extensions.Localization.IStringLocalizerFactory, CatalogLocalizerFactory>();
@@ -157,6 +168,7 @@ builder.Services.Configure<ForwardedHeadersOptions>(o =>
 var app = builder.Build();
 
 await Database.MigrateWithRetryAsync(app);
+await Database.MoveOldOfficeSettingsAsync(app);
 
 app.UseForwardedHeaders();
 if (app.Environment.IsDevelopment())
@@ -210,6 +222,9 @@ app.MapPost("/language", async (HttpContext http, CurrentUser me, AppDbContext d
 }).AllowAnonymous();
 
 app.MapGet("/health", async (AppDbContext db) => await db.Database.CanConnectAsync() ? Results.Ok("ok") : Results.StatusCode(503)).AllowAnonymous();
+
+// The page Integrations became Connections (MatPlatform 2.2).
+app.MapGet("/Admin/Integrations", () => Results.LocalRedirect("/Admin/Connections", permanent: true)).AllowAnonymous();
 app.MapFileEndpoints();
 app.MapLinkEndpoints();
 app.MapLocationEndpoints();

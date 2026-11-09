@@ -42,7 +42,8 @@ public abstract class ItemPageModel(AppDbContext db) : AppPageModel
 
         Access = access;
         Path = await NodeService.PathAsync(db, Actor.Of(UserId), access.Node, HttpContext.RequestAborted);
-        OpensInOffice = access.Node.Kind == NodeKind.File && OfficeService.FormatOf(await OfficeService.ActiveKindsAsync(db), access.Node.Name) is not null;
+        OpensInOffice = access.Node.Kind == NodeKind.File
+            && OfficeService.FormatOf(await OfficeService.ActiveKindsAsync(db, HttpContext.RequestServices.GetRequiredService<MatPlatform.MatBindings>()), access.Node.Name) is not null;
         ViewData["Title"] = access.Node.Name;
         var crumbs = new List<(string, string?)>
         {

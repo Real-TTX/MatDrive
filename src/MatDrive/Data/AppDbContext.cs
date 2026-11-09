@@ -219,6 +219,8 @@ public sealed class AppDbContext(DbContextOptions<AppDbContext> options, Current
             e.Property(x => x.DriveUrlForOffice).HasMaxLength(300);
             e.Property(x => x.OfficeKeyProtected).HasMaxLength(2000);
             e.Property(x => x.OfficeFormats).HasColumnType("jsonb");
+            e.Property(x => x.OfficeFormatsBinding).HasMaxLength(64);
+            e.Property(x => x.OfficeProblem).HasMaxLength(200);
         });
     }
 

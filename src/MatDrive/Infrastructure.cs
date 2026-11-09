@@ -1,6 +1,9 @@
 using System.Text.RegularExpressions;
 using MatDrive.Data;
 using MatDrive.Services;
+using MatDrive.Services.Office;
+using MatPlatform;
+using Microsoft.AspNetCore.DataProtection;
 using Microsoft.EntityFrameworkCore;
 
 namespace MatDrive;
@@ -54,6 +57,30 @@ public static class Database
                 app.Logger.LogWarning("The database is not ready yet (attempt {Attempt}/{Attempts}): {Message}", attempt, attempts, ex.Message);
                 await Task.Delay(TimeSpan.FromSeconds(3));
             }
+        }
+    }
+
+    /// <summary>Once, after the migrations: the settings of the old page Integrations become the binding office.edit entered by hand (<see cref="OfficeService.MoveOldSettingsAsync"/>).</summary>
+    public static async Task MoveOldOfficeSettingsAsync(WebApplication app)
+    {
+        using var scope = app.Services.CreateScope();
+        var services = scope.ServiceProvider;
+        var result = await OfficeService.MoveOldSettingsAsync(
+            services.GetRequiredService<AppDbContext>(),
+            services.GetRequiredService<IDataProtectionProvider>(),
+            services.GetRequiredService<MatBindings>(),
+            services.GetRequiredService<MatBindingStore>());
+        switch (result)
+        {
+            case OldOfficeSettings.Moved:
+                app.Logger.LogInformation("The settings of MatOffice (Integrations) are now the connection office.edit entered by hand (Administration → Connections).");
+                break;
+            case OldOfficeSettings.Kept:
+                app.Logger.LogInformation("The variables MAT_OFFICE_EDIT_* connect office.edit: the old settings of MatOffice stay until they are gone.");
+                break;
+            case OldOfficeSettings.Dropped:
+                app.Logger.LogInformation("The old settings of MatOffice (switched off, incomplete or replaced) were removed.");
+                break;
         }
     }
 }

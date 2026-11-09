@@ -1,0 +1,55 @@
+@page "/Admin/Connections"
+@model MatDrive.Pages.Admin.ConnectionsModel
+@using MatDrive.Services.Office
+@{
+    ViewData["Title"] = L["Connections.Title"].Value;
+    ViewData["PageSub"] = L["Connections.Sub"].Value;
+    ViewData["Crumbs"] = new List<(string, string?)> { (L["Admin.Title"].Value, null), (L["Connections.Title"].Value, null) };
+    var office = Model.Office;
+}
+
+<div class="mat-cols">
+    <div class="mat-col-12 mat-col-lg-8">
+        @* the Connections area of MatPlatform, the same in every app: its forms post to /api/connections/form and come back here *@
+        <mat-connections />
+    </div>
+    <div class="mat-col-12 mat-col-lg-4">
+        <div class="mat-card">
+            <div class="mat-card__head"><h2 class="mat-card__title">@Ui.Icon("kind-docs")@L["Office.Formats"]</h2></div>
+            <div class="mat-card__body">
+                @if (!office.Bound)
+                {
+                    <p class="md-muted">@L["Office.Formats.NotBound"]</p>
+                }
+                else if (office.Problem is { } problem)
+                {
+                    <div class="mat-alert mat-alert--warning" role="status">@Ui.Icon("alert")<div class="mat-alert__body"><strong>@OfficeService.ProblemText(problem)</strong> @L["Office.Formats.Failed"]</div></div>
+                }
+                else if (office.Kinds.Count == 0)
+                {
+                    <p class="md-muted">@L["Office.Formats.None"]</p>
+                }
+                else
+                {
+                    <dl class="mat-kv">
+                        @foreach (var k in office.Kinds)
+                        {
+                            <dt><span class="md-name"><svg class="mat-icon" data-colour="@k.Colour" aria-hidden="true" focusable="false"><use href="#mat-i-kind-@k.Kind"></use></svg><span>@k.Name</span></span></dt>
+                            <dd class="mat-mono">@string.Join(", ", k.Formats.Where(f => f.Open).Select(f => f.Write ? f.Ext : f.Ext + " (" + L["Office.ReadOnly"].Value + ")"))</dd>
+                        }
+                    </dl>
+                }
+                @if (office.CheckedDate is { } c)
+                {
+                    <p class="mat-hint">@L["Office.CheckedOn", Dates.Stamp(c, Model.Zone)]</p>
+                }
+            </div>
+        </div>
+        @if (office.Bound)
+        {
+            <form method="post" asp-page-handler="Check" class="md-mt">
+                <button type="submit" class="mat-btn mat-btn--secondary">@Ui.Icon("refresh")<span>@L["Office.Check"]</span></button>
+            </form>
+        }
+    </div>
+</div>

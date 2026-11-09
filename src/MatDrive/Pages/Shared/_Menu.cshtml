@@ -4,7 +4,7 @@
     The menus (SHELL-01 .. SHELL-19): one panel per menu of the switcher at the foot (SHELL-15), the one of the page shown.
     - drive:    New (a menu), My Drive, the shared drives, shared with me, recent, starred, trash, the storage locations, the space used
     - settings: profile, password, app passwords (WebDAV), my data
-    - admin:    users, storage locations, integrations, activity, system (administrators only)
+    - admin:    users, storage locations, connections, activity, system (administrators only)
     A page names what it shows: ViewData["NavKey"] ("my", "shared", "recent", "starred", "trash", "drive-12", "location-3").
 *@
 @{
@@ -96,7 +96,7 @@
         <ul class="mat-nav__list">
             <li><a class="@Cls(Under("/Admin/Users"))" href="/Admin/Users" aria-current="@Cur(Under("/Admin/Users"))">@Ui.Icon("user-circle")<span>@L["Users.Title"]</span></a></li>
             <li><a class="@Cls(Under("/Admin/Locations"))" href="/Admin/Locations" aria-current="@Cur(Under("/Admin/Locations"))">@Ui.Icon("server")<span>@L["Locations.Title"]</span></a></li>
-            <li><a class="@Cls(Under("/Admin/Integrations"))" href="/Admin/Integrations" aria-current="@Cur(Under("/Admin/Integrations"))">@Ui.Icon("plug")<span>@L["Integrations.Title"]</span></a></li>
+            <li><a class="@Cls(Under("/Admin/Connections"))" href="/Admin/Connections" aria-current="@Cur(Under("/Admin/Connections"))">@Ui.Icon("plug")<span>@L["Connections.Title"]</span></a></li>
             <li><a class="@Cls(Under("/Admin/Activity"))" href="/Admin/Activity" aria-current="@Cur(Under("/Admin/Activity"))">@Ui.Icon("activity")<span>@L["Activity.Title"]</span></a></li>
             <li><a class="@Cls(Under("/Admin/System"))" href="/Admin/System" aria-current="@Cur(Under("/Admin/System"))">@Ui.Icon("settings")<span>@L["System.Title"]</span></a></li>
         </ul>

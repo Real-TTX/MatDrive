@@ -264,9 +264,10 @@ public static class FileEndpoints
         });
 
         // ---- MatOffice ----------------------------------------------------------------------------------------------------------
-        live.MapPost("/office/new", async (OfficeNewRequest body, HttpContext http, AppDbContext db, BlobStore store, IDataProtectionProvider protection, IHttpClientFactory clients, CurrentUser me) =>
+        live.MapPost("/office/new", async (OfficeNewRequest body, HttpContext http, AppDbContext db, BlobStore store, MatPlatform.MatBindings bindings, IHttpClientFactory clients, CurrentUser me) =>
         {
-            var made = await OfficeService.CreateAsync(db, store, protection, clients.CreateClient("office"), Actor.Of(me.RequiredId), body.DriveId, body.ParentId, body.Kind ?? string.Empty, Languages.Current, http.RequestAborted);
+            var office = await bindings.GetAsync(OfficeService.Capability, http.RequestAborted);
+            var made = await OfficeService.CreateAsync(db, store, clients.CreateClient("office"), office, Actor.Of(me.RequiredId), body.DriveId, body.ParentId, body.Kind ?? string.Empty, Languages.Current, http.RequestAborted);
             return made.NotAllowed ? Results.NotFound() : made.Ok ? Results.Json(new { id = made.Value!.Id, name = made.Value.Name, open = $"/office/open/{made.Value.Id}" }, Json) : Problem(made.Error);
         });
 

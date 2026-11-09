@@ -1,6 +1,14 @@
 # MatDrive - Release (branch main, image :latest)
 #   docker compose up -d        ->  http://localhost:4810
-# The first account that registers is the administrator. MatIdentity and MatSMTP are switched on by Mattiverse (see README).
+# The first account that registers is the administrator. No variable is needed: MatDrive does its whole job without them.
+# Mattiverse connects the rest by itself (see README); without it, these are optional under "environment:" of web:
+#   MAT_PUBLIC_URL                public address (links, MatOffice); fixed on Administration -> System while set
+#   MAT_INTERNAL_URL              where other apps (MatOffice) reach MatDrive, e.g. http://matdrive-web:4810
+#   MAT_FRAME_ANCESTORS           origins that may show MatDrive in a frame (Mattiverse)
+#   MAT_OFFICE_EDIT_URL           MatOffice for the browser, e.g. https://office.example.com   (office.edit: or enter the
+#   MAT_OFFICE_EDIT_INTERNAL_URL  MatOffice for this server, e.g. http://matoffice-web:4820      three values in
+#   MAT_OFFICE_EDIT_KEY           the key MatOffice made for MatDrive                           Administration -> Connections)
+#   MATIDENTITY_*, MATSMTP_*      sign-in through MatIdentity, mail through MatSMTP
 name: matdrive
 
 services:

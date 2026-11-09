@@ -13,7 +13,7 @@ namespace MatDrive.Pages.Drive;
 /// trash and the search. One list (table or tiles) with a toolbar above (search in the folder, type, sort, view), selection with actions for many items, and the
 /// actions of the folder below. Uploads, previews, menus and dialogs are drive.js / explorer.js; every change goes through <c>/live/drive</c>.
 /// </summary>
-public sealed class IndexModel(AppDbContext db) : AppPageModel
+public sealed class IndexModel(AppDbContext db, MatPlatform.MatBindings bindings) : AppPageModel
 {
     private const int PageSize = 100;
     private static readonly string[] Sorts = ["name", "modified", "size"];
@@ -58,7 +58,7 @@ public sealed class IndexModel(AppDbContext db) : AppPageModel
         var sort = ListQuery.Text(Request, "sort") is { } s && Sorts.Contains(s) ? s : (View is "recent" or "shared" ? "modified" : "name");
         var desc = ListQuery.Descending(Request, byDefault: sort != "name");
         var page = ListQuery.Page(Request);
-        OfficeKinds = await OfficeService.ActiveKindsAsync(db);
+        OfficeKinds = await OfficeService.ActiveKindsAsync(db, bindings);
         var query = new NodeQuery(search, type, sort, desc, page, PageSize);
 
         switch (View)

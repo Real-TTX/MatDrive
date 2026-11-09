@@ -8,8 +8,11 @@ A drive in the browser (like Google Drive) with the functions of the sister app 
 zip/unzip, a text editor, content search). Every person has **My Drive**; teams have **shared drives** (members Viewer/Editor/Manager); files and folders are
 **shared** with people or through **links** (password, expiry, upload into a folder link); files keep **versions**; deleted items lie in the **trash**; **stars**,
 **recent**, **search** (names and the text of text files). **WebDAV** at `/dav/` (sign-in with the address and an app password). **MatOffice** (the sister app, its
-own container) opens and saves the office files (`.docx`, `.xlsx`, `.pptx`, `.csv`, the MatOffice formats) with an API key (`Services/Office`). Part of the Mat
-family: sign-in through **MatIdentity**, mail through **MatSMTP**, the platform contract for **Mattiverse** (all optional, switched on by environment variables).
+own container) opens and saves the office files (`.docx`, `.xlsx`, `.pptx`, `.csv`, the MatOffice formats) through the capability `office.edit` (`Services/Office`). Part
+of the Mat family on **MatPlatform 2.2** (the Mat app model, MatDesign `docs/APP-MODEL.md`): MatDrive **consumes** `office.edit`, `identity.oidc` (sign-in through
+**MatIdentity**) and `mail.smtp` (mail through **MatSMTP**), all optional; a broker (**Mattiverse**) makes the bindings and passes them as environment variables,
+without it an administrator enters `office.edit` by hand in *Administration → Connections* (`<mat-connections />`); it **contributes** the launcher Drive and two
+admin widgets to a shell. No code knows another app beyond the capability, and MatDrive works without any of the variables.
 
 Stack: ASP.NET Core on **.NET 10**, C#, **Razor Pages**, EF Core + **PostgreSQL** (metadata), the bytes of the files in the data volume (`/data/files`, `BlobStore`),
 the **MatUi** toolkit of the sister project MatDesign (`wwwroot/matui`, release 0.9.3, copied: never edit by hand), plain JavaScript ES modules without a build
@@ -39,7 +42,8 @@ English and German (catalog in `Resources/Texts/*.json`). Accent: violet `#8e24a
 ```
 src/MatDrive
   Program.cs                 composition root: services, cookie auth (+ MatIdentity), antiforgery header, razor conventions, rate limit, static files, endpoints
-  Infrastructure.cs          HealthCheck (--healthcheck), Database.MigrateWithRetry, SecurityHeaders (CSP), MaintenanceService (InstanceService.CleanUpAsync every 6 h), EmptyStringBinderProvider
+  Infrastructure.cs          HealthCheck (--healthcheck), Database.MigrateWithRetry (+ MoveOldOfficeSettings: the old Integrations settings become the binding by hand, once),
+                             SecurityHeaders (CSP), MaintenanceService (InstanceService.CleanUpAsync every 6 h), EmptyStringBinderProvider
   Data/                      Entities.cs (User, UserSession, AppPassword, Drive, DriveMember, Node (Path = "/12/40/41/"), NodeVersion, NodeShare, ShareLink, NodeStar, NodeVisit,
                              Activity, StorageLocation(+Access), UploadSession, SystemSetting), AppDbContext.cs, Migrations/
   Services/Files/            THE business layer of the drives, static classes (permission check in every function):
@@ -49,8 +53,11 @@ src/MatDrive
                              names unique per folder, "name (2).ext"), FileService (upload whole / in pieces, new versions with If-Match and coalescing, open for download,
                              versions, zip, unzip, text for the editor), ShareService (shares, links), ActivityLog, FileTypes, BlobStore (/data/files/ab/cd/<blob>),
                              FileEndpoints (/files/{id}/content, /files/zip, /live/drive/*, the file API for MatOffice), LinkEndpoints (/l/{token}/…, LinkGate = the password cookie)
-  Services/Office/           OfficeService: settings (URL, internal URL, API key encrypted, MatDrive URL for MatOffice), check (/api/v1/host/formats), open (session at
-                             MatOffice, a time-limited token for /api/v1/office/files/{id}/content), new documents (/api/v1/host/new)
+  Services/Office/           OfficeService: the binding office.edit (MatBindings: Url for the browser, ServerUrl + Key for the calls; bound = on), the formats per binding
+                             (Fingerprint, NeedsRefresh: new binding, 6 h, a failure after 5 min; a failure = no kinds + health office.edit degraded), open (session at
+                             the editor, a time-limited token for /api/v1/office/files/{id}/content at MAT_INTERNAL_URL ?? the address for other apps ?? the public one),
+                             new documents; the endpoints at /api/provides/office.edit/{formats,sessions,new}, else /api/v1/host/* of an older MatOffice;
+                             MoveOldSettingsAsync. OfficeMonitor (background: fetches the formats when due, every minute a look)
   Services/Locations/        the storage locations (like MatFile), static business layer: LocationAccess (role of a person: everyone/list, read-only = Viewer),
                              LocationAdmin (administrators: list, save with secrets encrypted, test, delete, access), LocationService (+ .Transfers: browse, upload, folder,
                              rename, delete, text, properties/rwx, move/copy across locations, to and from the drives, zip, unzip), LocationSearch (below a folder, NDJSON);
@@ -64,17 +71,23 @@ src/MatDrive
   Services/Mail/MailService  MatSMTP through MailKit, queued in the background; off unless MATSMTP_HOST is set
   Services/Auth/             CurrentUser, PasswordService, SessionService (sessions in the DB), AccountService, ExternalSignInService (MatIdentity), AccountDataService (GDPR export/erase)
   Services/                  Ui (icons, logo, bytes), MenuService, InstanceService (numbers, settings, housekeeping), ListModels (toolbar, pager), Dates, Assets
-  MatPlatform/               copy of the shared package (MatDesign): platform contract, MatIdentity sign-in, back-channel logout, MatSmtpSettings. Never edit here.
-  Platform/                  MatDrivePlatform (tiles, settings, actions for Mattiverse), MatDriveIdentityUsers
+  MatPlatform/               copy of the shared package (MatDesign, 2.0.0; tools/matplatform-copy.js): platform contract 2, bindings (MatBindings, the store in
+                             /data/matplatform/bindings.json), the Connections area (<mat-connections />), MatIdentity sign-in, back-channel logout, MatSmtpSettings,
+                             MAT_FRAME_ANCESTORS. Never edit here.
+  Platform/                  MatDrivePlatform (tiles, settings, actions, consumes, launcher Drive + quick actions, admin widgets storage/users, health incl. office.edit;
+                             publicUrl fixed while MAT_PUBLIC_URL is set), MatDriveIdentityUsers
   Controls/                  ONE code base per control: <md-field>, <md-buttons>, <md-table>, <md-tabs>/<md-tab>
   Pages/                     Drive/ (Index = the explorer: /drive, /drive/folder/{id}, /drive/shared-drive/{id}, shared, recent, starred, trash, search; Item = the tabs of an item;
                              Edit = the text editor), Drives/ (shared drives), Public/ (links /l/{token}), Account/ (+ AppPasswords), Admin/ (Users, Locations: list, Edit =
-                             General, Access, Integrations, Activity, System), Locations/ (Index = a location like the explorer: /locations/{id}/{folder…}; Edit = the
+                             General, Access, Connections (<mat-connections /> + what the office editor opens, Check now; /Admin/Integrations redirects here),
+                             Activity, System (+ Advanced: the address of MatDrive for other apps; fixed fields while MAT_PUBLIC_URL / MAT_INTERNAL_URL are set)),
+                             Locations/ (Index = a location like the explorer: /locations/{id}/{folder…}; Edit = the
                              text editor /locations/edit/{id}?path=), About
   wwwroot/js/                util.js (t, el, icon, request, dialog, busy …), drive.js (the menu "New" on every page), explorer.js (uploads, drag & drop, menus, preview, picker: drives and storage locations),
                              locations.js (the same for a storage location: uploads, menus, pickers, properties, search, the text editor)
   wwwroot/css/app.css        accent + the styles of the explorer (prefix md-); locations.css: what the storage locations add (md-loc-, md-perm)
-tests/MatDrive.Tests         unit + database tests
+tests/MatDrive.Tests         unit + database tests (PlatformTests: the definition against the MatUi sprite, the app with a broker's variables; OfficeBindingTests: office.edit
+                             by variables / by hand / none with a fake MatOffice, the move of the old settings)
 ```
 
 ## Conventions
@@ -85,7 +98,9 @@ tests/MatDrive.Tests         unit + database tests
 
 **Security**: every query of a node goes through `DriveAccess`; something a person may not see answers 404. Every change of `/live` needs the antiforgery header
 `RequestVerificationToken`. File content is served with its own CSP (sandbox) and inline only for types that cannot run script (never HTML or SVG). Secrets
-(passwords of locations, the key of MatOffice) are encrypted with DataProtection (keys in the volume); app passwords and API keys only as hashes.
+(passwords of locations, the key of a binding entered by hand, kept by MatPlatform in `/data/matplatform/bindings.json`) are encrypted with DataProtection (keys in
+the volume); app passwords and API keys only as hashes. The Connections area and its form (`/api/connections/form`) are for administrators only
+(`MatPlatformOptions.ConnectionsAccess` = the role Admin).
 
 **WebDAV** (`/dav/`): sign-in with HTTP Basic, the address and an app password (or the password of a local account), never the cookie; a sign-in is remembered for 2 minutes,
 10 failures a minute per IP answer 429. The tree has stable English names: `My Drive/`, `Shared drives/<drive>/`, `Shared with me/<item>/` (clashing names get ` (2)`), no

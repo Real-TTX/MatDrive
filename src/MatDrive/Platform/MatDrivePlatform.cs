@@ -1,17 +1,20 @@
 using System.Text.Json;
+using MatDrive.Localization;
 using MatDrive.Services;
 using MatDrive.Services.Locations;
+using MatDrive.Services.Office;
 using MatPlatform;
 
 namespace MatDrive.Platform;
 
 /// <summary>
-/// MatDrive as an app of the platform contract (MatDesign docs/PLATFORM.md) on the shared package MatPlatform (the folder <c>MatPlatform/</c>, a copy):
-/// how a consumer such as Mattiverse shows MatDrive (<see cref="Describe"/>: tiles, the few settings, buttons), its values and what its buttons do.
+/// MatDrive as an app of the platform contract (MatDesign docs/PLATFORM.md, contract 2) on the shared package MatPlatform (the folder <c>MatPlatform/</c>, a copy):
+/// how a consumer such as Mattiverse shows MatDrive (<see cref="Describe"/>: tiles, the few settings, buttons), what it consumes (<c>office.edit</c>, and the sign-in
+/// and the mail that their variables set), what it adds to a shell (the launcher Drive, two widgets for administrators), its values and what its buttons do.
 /// The settings are those of the admin page System (registration, public address, space, trash, versions), kept in the same place (<see cref="InstanceService"/>).
 /// The values come from the services (no DbContext here: this is the web layer).
 /// </summary>
-public sealed class MatDrivePlatform(InstanceService instance, LocationMonitor locations, ILogger<MatDrivePlatform> log)
+public sealed class MatDrivePlatform(InstanceService instance, LocationMonitor locations, MatBindings bindings, MatPlatformSettings settings, ILogger<MatDrivePlatform> log)
     : IMatPlatformState, IMatPlatformConfiguration, IMatPlatformActions, IMatPlatformHealth
 {
     /// <summary>The id of MatDrive in the platform (and the default client id at MatIdentity), as in MatDesign <c>AppRegistry.cs</c>.</summary>
@@ -20,16 +23,48 @@ public sealed class MatDrivePlatform(InstanceService instance, LocationMonitor l
     /// <summary>The accent of MatDrive (a deep violet, white text 7:1; see <c>wwwroot/css/app.css</c>).</summary>
     public const string Accent = "#8e24aa";
 
-    /// <summary>The MatApiDefinition of MatDrive (<c>GET /api</c>); <c>auth</c> and <c>endpoints</c> are set by MatPlatform.</summary>
-    public static void Describe(MatPlatformBuilder o)
+    /// <summary>The MatApiDefinition of MatDrive (<c>GET /api</c>) without <c>MAT_PUBLIC_URL</c>.</summary>
+    public static void Describe(MatPlatformBuilder o) => Describe(o, null);
+
+    /// <summary>
+    /// The MatApiDefinition of MatDrive (<c>GET /api</c>); <c>auth</c> and <c>endpoints</c> are set by MatPlatform. <paramref name="publicUrl"/> is the value of
+    /// <c>MAT_PUBLIC_URL</c>: while it is set, the field <c>publicUrl</c> is fixed.
+    /// </summary>
+    public static void Describe(MatPlatformBuilder o, string? publicUrl)
     {
         var T = o.T;
 
         o.App(AppId, "MatDrive", T("Dateien im Browser: Ablage, Teilen, Versionen, WebDAV und Speicherorte", "Files in the browser: storage, sharing, versions, WebDAV and storage locations"), AppInfo.Version, "/img/logo/matdrive-mark.svg", Accent, "/drive");
 
+        // What MatDrive uses from other apps: the office editor (a binding, also by hand in Administration → Connections); the sign-in and the mail stay set by their variables.
+        o.Consumes(MatCapabilities.OfficeEdit, optional: true, label: T("Öffnet Office-Dateien mit", "Opens office files with"));
+        o.Consumes(MatCapabilities.IdentityOidc, optional: true);
+        o.Consumes(MatCapabilities.MailSmtp, optional: true);
+
+        // What MatDrive adds to the home screen of a shell (Mattiverse): the drive with the views of its menu, and two widgets for administrators.
+        o.Launcher("drive", "Drive", "/img/logo/matdrive-mark.svg", "/drive");
+        o.QuickAction("drive", T("Für mich freigegeben", "Shared with me"), "users", url: "/drive/shared");
+        o.QuickAction("drive", T("Zuletzt verwendet", "Recent"), "clock", url: "/drive/recent");
+        o.QuickAction("drive", T("Markiert", "Starred"), "star", url: "/drive/starred");
+        o.QuickAction("drive", T("Papierkorb", "Trash"), "trash", url: "/drive/trash");
+        o.Widget(new MatWidget("storage", T("Speicher", "Storage"), MatWidgetKinds.Tiles, "medium")
+        {
+            Items = ["files", "used", "free"],
+            Icon = "hard-drive",
+            Url = "/Admin/System",
+            Audience = MatAudience.Admin,
+        });
+        o.Widget(new MatWidget("users", T("Aktive Benutzer", "Active users"), MatWidgetKinds.Stat)
+        {
+            Items = ["users"],
+            Icon = "users",
+            Url = "/Admin/Users",
+            Audience = MatAudience.Admin,
+        });
+
         o.Page("overview", T("Übersicht", "Overview"), "dashboard",
             MatSection.Tiles("users", "files", "folders", "used", "free", "sharedDrives", "sharedItems", "links", "locations", "uploads7", "trash", "registration", "lastActivity"),
-            MatSection.Actions("openApp", "openUsers", "openLocations", "openIntegrations", "openActivity", "openSystem", "cleanUp", "checkLocations"));
+            MatSection.Actions("openApp", "openUsers", "openLocations", "openConnections", "openActivity", "openSystem", "cleanUp", "checkLocations"));
         o.Page("settings", T("Einstellungen", "Settings"), "settings",
             MatSection.Form(T("Allgemein", "General"), "registrationOpen", "publicUrl"),
             MatSection.Form(T("Speicher", "Storage"), "defaultQuotaGb", "maxUploadMb", "trashDays", "versionDays"));
@@ -40,7 +75,7 @@ public sealed class MatDrivePlatform(InstanceService instance, LocationMonitor l
         o.Tile("used", T("Belegt", "Used"), "text", icon: "hard-drive");
         o.Tile("free", T("Frei auf dem Datenträger", "Free on the volume"), "text", icon: "hard-drive");
         o.Tile("sharedDrives", T("Geteilte Ablagen", "Shared drives"), icon: "users");
-        o.Tile("sharedItems", T("Geteilte Elemente", "Shared items"), icon: "share");
+        o.Tile("sharedItems", T("Geteilte Elemente", "Shared items"), icon: "users"); // an icon of the MatUi sprite: a consumer draws it with its own copy
         o.Tile("links", T("Aktive Links", "Active links"), icon: "link");
         o.Tile("locations", T("Speicherorte", "Storage locations"), icon: "server");
         o.Tile("uploads7", T("Hochgeladen in 7 Tagen", "Uploaded in 7 days"), icon: "upload");
@@ -52,11 +87,16 @@ public sealed class MatDrivePlatform(InstanceService instance, LocationMonitor l
         {
             Hint = T("Aus: nur Administratoren legen Konten an.", "Off: only administrators create accounts."),
         });
-        o.Field(new MatField("publicUrl", T("Öffentliche Adresse", "Public address"), "url")
+        var address = new MatField("publicUrl", T("Öffentliche Adresse", "Public address"), "url")
         {
             Max = 300,
             Placeholder = "https://drive.example.com",
             Hint = T("Für Links, E-Mails und MatOffice; leer: die Adresse des Aufrufs.", "For links, mails and MatOffice; empty: the address of the request."),
+        };
+        o.Field(publicUrl is null ? address : address with
+        {
+            Fixed = true,
+            Hint = T("Festgelegt durch MAT_PUBLIC_URL (Mattiverse); hier lässt sie sich nicht ändern.", "Set by MAT_PUBLIC_URL (Mattiverse); it cannot be changed here."),
         });
         o.Field(new MatField("defaultQuotaGb", T("Speicher pro Person (GB)", "Space per person (GB)"), "number") { Min = 0, Max = 1000000, Hint = T("0 = unbegrenzt.", "0 = no limit.") });
         o.Field(new MatField("maxUploadMb", T("Größte Datei (MB)", "Largest file (MB)"), "number") { Min = 0, Max = 10000000, Hint = T("0 = unbegrenzt.", "0 = no limit.") });
@@ -66,7 +106,7 @@ public sealed class MatDrivePlatform(InstanceService instance, LocationMonitor l
         o.LinkAction("openApp", T("Öffnen", "Open"), "external", "/drive");
         o.LinkAction("openUsers", T("Benutzer", "Users"), "users", "/Admin/Users");
         o.LinkAction("openLocations", T("Speicherorte", "Storage locations"), "server", "/Admin/Locations");
-        o.LinkAction("openIntegrations", T("Integrationen", "Integrations"), "plug", "/Admin/Integrations");
+        o.LinkAction("openConnections", T("Verbindungen", "Connections"), "plug", "/Admin/Connections");
         o.LinkAction("openActivity", T("Aktivität", "Activity"), "activity", "/Admin/Activity");
         o.LinkAction("openSystem", T("System", "System"), "settings", "/Admin/System");
         o.PostAction(
@@ -98,7 +138,30 @@ public sealed class MatDrivePlatform(InstanceService instance, LocationMonitor l
         }
 
         checks.Add(await LocationHealthAsync(call, ct));
+        if (await OfficeHealthAsync(call, ct) is { } office)
+        {
+            checks.Add(office);
+        }
+
         return checks;
+    }
+
+    /// <summary>
+    /// The health entry <c>office.edit</c> (named after the capability), only while it is bound: degraded when the last fetch of the formats failed (office files
+    /// open in the preview then).
+    /// </summary>
+    private async Task<MatHealthCheck?> OfficeHealthAsync(MatPlatformCall call, CancellationToken ct)
+    {
+        var office = await bindings.GetAsync(OfficeService.Capability, ct);
+        if (!office.IsBound)
+        {
+            return null;
+        }
+
+        var status = await instance.OfficeStatusAsync(office, ct);
+        return status.Problem is { } problem
+            ? new MatHealthCheck(OfficeService.Capability, "degraded", Languages.In(call.Language, () => OfficeService.ProblemText(problem)))
+            : new MatHealthCheck(OfficeService.Capability, "ok", status.Pending ? call.T("Die Formate werden gerade abgefragt.", "The formats are being fetched.") : null);
     }
 
     public async Task<IReadOnlyDictionary<string, MatStateValue>> GetStateAsync(MatPlatformCall call, CancellationToken ct)
@@ -153,6 +216,9 @@ public sealed class MatDrivePlatform(InstanceService instance, LocationMonitor l
             {
                 case "registrationOpen" when value.ValueKind is JsonValueKind.True or JsonValueKind.False:
                     open = value.GetBoolean();
+                    break;
+                case "publicUrl" when settings.AppPublicUrl is not null:
+                    errors[key] = call.T("Festgelegt durch MAT_PUBLIC_URL.", "Set by MAT_PUBLIC_URL.");
                     break;
                 case "publicUrl" when value.ValueKind is JsonValueKind.String:
                     url = value.GetString()!;

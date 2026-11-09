@@ -13,7 +13,7 @@
                 <div class="mat-card__head"><h2 class="mat-card__title">@Ui.Icon("settings")@L["System.Settings"]</h2></div>
                 <div class="mat-card__body mat-form">
                     <md-field name="RegistrationOpen" kind="switch" label="@L["System.RegistrationOpen"]" value="@Model.RegistrationOpen.ToString()" hint="@L["System.RegistrationOpen.Hint"]" />
-                    <md-field name="PublicUrl" kind="url" label="@L["System.PublicUrl"]" value="@Model.PublicUrl" placeholder="https://drive.example.com" optional hint="@L["System.PublicUrl.Hint"]" />
+                    <md-field name="PublicUrl" kind="url" label="@L["System.PublicUrl"]" value="@Model.PublicUrl" placeholder="https://drive.example.com" optional="@(!Model.PublicUrlFixed)" disabled="@Model.PublicUrlFixed" hint="@L[Model.PublicUrlFixed ? "System.PublicUrl.Fixed" : "System.PublicUrl.Hint"]" />
                 </div>
             </div>
             <div class="mat-card">
@@ -23,6 +23,12 @@
                     <md-field name="MaxUploadMb" kind="number" label="@L["System.MaxUpload"]" value="@Model.MaxUploadMb" min="0" hint="@L["System.MaxUpload.Hint"]" />
                     <md-field name="TrashDays" kind="number" label="@L["System.TrashDays"]" value="@Model.TrashDays" min="1" max="3650" hint="@L["System.TrashDays.Hint"]" />
                     <md-field name="VersionDays" kind="number" label="@L["System.VersionDays"]" value="@Model.VersionDays" min="0" max="36500" hint="@L["System.VersionDays.Hint"]" />
+                </div>
+            </div>
+            <div class="mat-card">
+                <div class="mat-card__head"><h2 class="mat-card__title">@Ui.Icon("plug")@L["System.Advanced"]</h2></div>
+                <div class="mat-card__body mat-form">
+                    <md-field name="AppsUrl" kind="url" label="@L["System.AppsUrl"]" value="@Model.AppsUrl" placeholder="http://host.docker.internal:4810" optional="@(!Model.AppsUrlFixed)" disabled="@Model.AppsUrlFixed" hint="@L[Model.AppsUrlFixed ? "System.AppsUrl.Fixed" : "System.AppsUrl.Hint"]" />
                 </div>
             </div>
             <md-buttons save="@L["Common.Save"]" back="/drive" />

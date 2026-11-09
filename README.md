@@ -85,12 +85,26 @@ Open **http://localhost:4810**; the first account that registers is the administ
 
 ## Office files with MatOffice
 
-MatOffice is the office suite of the family (Docs, Sheets, Slides, Base) and runs in its own container. To connect the two:
+MatOffice is the office suite of the family (Docs, Sheets, Slides, Base) and runs in its own container. MatDrive uses it through the capability
+**`office.edit`** of the Mat app model (MatPlatform 2.2): MatOffice provides it, MatDrive consumes it (optional). A connection is three values: the
+address of MatOffice for the browser, optionally its address for the server of MatDrive (inside Docker), and a key that MatOffice made for MatDrive.
+Connected means on; nothing else switches it.
 
-1. In **MatOffice**: *Administration → Connected apps → Connect an app*. MatOffice shows the API key once (`mo_…`).
-2. In **MatDrive**: *Administration → Integrations*: switch on *Open office files with MatOffice*, enter the address of MatOffice and the key, and
-   *Check the connection*. When both run in Docker, also give the internal addresses (*Address of MatOffice for MatDrive*, *Address of MatDrive
-   for MatOffice*) so that they reach each other inside the network.
+- **With Mattiverse** nothing is to do: it connects the two by itself and hands MatDrive the variables `MAT_OFFICE_EDIT_URL`,
+  `MAT_OFFICE_EDIT_INTERNAL_URL` and `MAT_OFFICE_EDIT_KEY` (and `MAT_INTERNAL_URL`, where MatOffice reaches MatDrive). *Administration → Connections*
+  shows the connection as *By the variables*.
+- **By hand**, without Mattiverse:
+  1. In **MatOffice**: *Connections → Connect an app by hand*, name *MatDrive*. MatOffice shows the address and the key once.
+  2. In **MatDrive**: *Administration → Connections → Opens office files with*: enter the address, the internal address (when both run in Docker,
+     e.g. `http://host.docker.internal:4820`) and the key, and *Save*. It shows *Entered here*.
+  3. When MatOffice cannot reach MatDrive at its public address (inside Docker), set *Administration → System → Advanced → Address of MatDrive for
+     other apps* (e.g. `http://host.docker.internal:4810`).
+- **Or with variables** in the compose file of MatDrive (`MAT_OFFICE_EDIT_*` as above); they win over the values entered by hand, which come back when the
+  variables go.
+
+MatDrive asks MatOffice which files it opens right after a connection is made and every six hours (*Check now* on the page Connections asks at once). While
+MatOffice does not answer, office files open in the preview and `/api/health` reports `office.edit` as `degraded`. The settings of the old page
+*Integrations* (before MatPlatform 2.2) become the connection entered by hand at the first start, once.
 
 After that, *New* offers a document, a spreadsheet, a presentation and a database, and office files open in MatOffice in a new tab. MatOffice reads and
 saves the file through a time-limited token of that one file; every save becomes a new version in MatDrive (saves of ten minutes count as one version).
@@ -144,9 +158,13 @@ Locks are kept in memory: one instance of MatDrive, and a restart forgets them.
 
 ## Mat platform
 
-`/api` (description), `/api/health`, `/api/state`, `/api/configure`, `/api/actions` after the platform contract of MatDesign (`MAT_API_KEY` or a token of
-MatIdentity); sign-in through MatIdentity (`MATIDENTITY_AUTHORITY`, `MATIDENTITY_CLIENT_ID`, `MATIDENTITY_CLIENT_SECRET`, `MATIDENTITY_INTERNAL_URL`),
-mail through MatSMTP (`MATSMTP_HOST` …). All optional, set by Mattiverse.
+`/api` (description), `/api/health`, `/api/state`, `/api/configure`, `/api/actions`, `/api/connections` after the platform contract 2 of MatDesign
+(MatPlatform 2.2; `MAT_API_KEY` or a token of MatIdentity). MatDrive consumes `office.edit` (MatOffice, see above), `identity.oidc` (sign-in through MatIdentity:
+`MATIDENTITY_AUTHORITY`, `MATIDENTITY_CLIENT_ID`, `MATIDENTITY_CLIENT_SECRET`, `MATIDENTITY_INTERNAL_URL`) and `mail.smtp` (MatSMTP: `MATSMTP_HOST` …);
+*Administration → Connections* shows all three. It adds to the home screen of Mattiverse the icon *Drive* (its menu: *Shared with me*, *Recent*,
+*Starred*, *Trash*) and, for administrators, the widgets *Storage* and *Active users*. `MAT_PUBLIC_URL` sets the public address (then fixed on
+*Administration → System*), `MAT_INTERNAL_URL` the address where other apps reach MatDrive, `MAT_FRAME_ANCESTORS` who may show it in a frame. All optional,
+set by Mattiverse; MatDrive does its whole job without any of them.
 
 ## Development
 

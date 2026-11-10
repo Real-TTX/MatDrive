@@ -12,7 +12,8 @@ public sealed record UserCriteria(string? Search, string? Role, string? State, s
 
 public sealed record UserList(List<UserRow> Items, int Total, int Matching);
 
-public sealed record UserDetail(long Id, string DisplayName, string Email, UserRole Role, bool IsActive, long? QuotaBytes);
+/// <param name="IdentityQuotaSet">MatIdentity set the space of My Drive (<paramref name="IdentityQuotaBytes"/>, null = no limit): the page shows it as fixed.</param>
+public sealed record UserDetail(long Id, string DisplayName, string Email, UserRole Role, bool IsActive, long? QuotaBytes, bool IdentityQuotaSet = false, long? IdentityQuotaBytes = null);
 
 /// <summary>The form of an account as it comes from the page (not yet checked).</summary>
 /// <summary>What the edit page of a user sends; <see cref="QuotaBytes"/> null = the default of the installation, 0 = no limit.</summary>
@@ -107,7 +108,7 @@ public static class UserAdmin
         }
 
         return await db.Users.AsNoTracking().Where(u => u.Id == id)
-            .Select(u => new UserDetail(u.Id, u.DisplayName, u.Email, u.Role, u.IsActive, u.QuotaBytes))
+            .Select(u => new UserDetail(u.Id, u.DisplayName, u.Email, u.Role, u.IsActive, u.QuotaBytes, u.IdentityQuotaSet, u.IdentityQuotaBytes))
             .FirstOrDefaultAsync(ct);
     }
 

@@ -17,7 +17,7 @@ public sealed class MatDriveIdentityUsers(ExternalSignInService externalSignIn, 
 {
     public async Task<MatIdentitySignInResult> SignInAsync(MatIdentityPerson person, HttpContext http, CancellationToken ct)
     {
-        var result = await externalSignIn.SignInExternalAsync(new ExternalIdentity(person.Subject, person.Email, person.Name, person.PreferredUserName, person.Role), ct);
+        var result = await externalSignIn.SignInExternalAsync(new ExternalIdentity(person.Subject, person.Email, person.Name, person.PreferredUserName, person.Role, person.Quotas ?? new Dictionary<string, long?>()), ct);
         if (result.LinkUserId is { } linkUserId)
         {
             return MatIdentitySignInResult.LinkRequired(linkUserId.ToString(CultureInfo.InvariantCulture));

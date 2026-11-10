@@ -25,6 +25,12 @@ public sealed class EditModel(AppDbContext db, AccountService accounts, Password
     /// <summary>The space of My Drive in GB; empty = the default of the installation, 0 = no limit.</summary>
     [BindProperty] public string QuotaGb { get; set; } = string.Empty;
 
+    /// <summary>MatIdentity sets the space of My Drive: the field shows its value and cannot be changed here.</summary>
+    public bool QuotaFixed { get; private set; }
+
+    /// <summary>The value MatIdentity set, in words ("50 GB", "no limit").</summary>
+    public string FixedQuota { get; private set; } = string.Empty;
+
     public bool IsNew => Id is null;
 
     public bool IsSelf => Id == UserId;
@@ -45,14 +51,29 @@ public sealed class EditModel(AppDbContext db, AccountService accounts, Password
             Role = user.Role;
             IsActive = user.IsActive;
             QuotaGb = user.QuotaBytes is { } q ? (q / (1024L * 1024 * 1024)).ToString(System.Globalization.CultureInfo.InvariantCulture) : string.Empty;
+            ShowFixed(user);
         }
 
         return Page();
     }
 
+    private void ShowFixed(UserDetail user)
+    {
+        QuotaFixed = user.IdentityQuotaSet;
+        FixedQuota = user.IdentityQuotaBytes is { } bytes ? Ui.Bytes(bytes) : Text.T("Users.Quota.Unlimited");
+    }
+
     public async Task<IActionResult> OnPostAsync()
     {
-        var input = new UserInput(DisplayName, Email, Role, IsActive, Password, long.TryParse(QuotaGb, out var gb) && gb >= 0 ? gb * 1024L * 1024 * 1024 : null);
+        var quota = long.TryParse(QuotaGb, out var gb) && gb >= 0 ? gb * 1024L * 1024 * 1024 : (long?)null;
+        if (Id is { } existing && await UserAdmin.GetAsync(db, UserId, existing, HttpContext.RequestAborted) is { IdentityQuotaSet: true } fixedUser)
+        {
+            // The field is not sent while MatIdentity sets the space: the person's own quota stays as it was.
+            quota = fixedUser.QuotaBytes;
+            ShowFixed(fixedUser);
+        }
+
+        var input = new UserInput(DisplayName, Email, Role, IsActive, Password, quota);
         if (Id is not { } id)
         {
             var (created, errors) = await UserAdmin.CreateAsync(db, accounts, UserId, input, Me.TimeZone, Languages.Current, HttpContext.RequestAborted);

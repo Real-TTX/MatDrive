@@ -370,6 +370,8 @@
   "System.CleanedUp": { "en": "Cleaned up: {0} items of the trash, {1} versions, {2} uploads.", "de": "Aufgeräumt: {0} Elemente des Papierkorbs, {1} Versionen, {2} Uploads." },
   "Users.Quota": { "en": "Space of My Drive (GB)", "de": "Speicher der Ablage (GB)" },
   "Users.Quota.Hint": { "en": "Empty: the default of the system. 0 = no limit.", "de": "Leer: die Vorgabe des Systems. 0 = unbegrenzt." },
+  "Users.Quota.Fixed": { "en": "Set by MatIdentity (the person's quota there); it is changed there.", "de": "Festgelegt durch MatIdentity (das Kontingent der Person dort); geändert wird es dort." },
+  "Users.Quota.Unlimited": { "en": "No limit", "de": "Unbegrenzt" },
 
   "Mail.Share.Subject": { "en": "{0} shared “{1}” with you", "de": "{0} hat „{1}“ mit dir geteilt" },
   "Mail.Share.Editor": { "en": "{0} shared “{1}” with you. You may edit it.\n\nOpen it: {2}", "de": "{0} hat „{1}“ mit dir geteilt. Du darfst es bearbeiten.\n\nÖffnen: {2}" },

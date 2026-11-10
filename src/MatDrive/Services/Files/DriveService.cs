@@ -191,18 +191,44 @@ public static class DriveService
         return Outcome<bool>.Success(true);
     }
 
-    /// <summary>The space a drive uses and may use (the quota of a personal drive is its person's, else the default of the installation).</summary>
+    /// <summary>
+    /// The space a drive uses and may use. A personal drive: what MatIdentity set for its person (null = no limit, 0 = none), else the person's own quota, else the default
+    /// of the installation (0 = no limit for both).
+    /// </summary>
     public static async Task<DriveUsage> UsageAsync(AppDbContext db, Drive drive, CancellationToken ct = default)
     {
         long? quota = drive.QuotaBytes;
         if (drive.Kind == DriveKind.Personal && drive.OwnerId is { } owner)
         {
-            var own = await db.Users.AsNoTracking().Where(u => u.Id == owner).Select(u => u.QuotaBytes).FirstOrDefaultAsync(ct);
-            quota = own ?? (await db.SystemSettings.AsNoTracking().Where(s => s.Id == 1).Select(s => (long?)s.DefaultQuotaBytes).FirstOrDefaultAsync(ct) ?? new SystemSetting().DefaultQuotaBytes);
+            var person = await db.Users.AsNoTracking().Where(u => u.Id == owner)
+                .Select(u => new { u.QuotaBytes, u.IdentityQuotaSet, u.IdentityQuotaBytes }).FirstOrDefaultAsync(ct);
+            if (person is { IdentityQuotaSet: true })
+            {
+                return new DriveUsage(drive.UsedBytes, person.IdentityQuotaBytes);
+            }
+
+            quota = person?.QuotaBytes ?? await DefaultQuotaAsync(db, ct);
         }
 
         return new DriveUsage(drive.UsedBytes, quota is > 0 ? quota : null);
     }
+
+    /// <summary>The space of a person's "My Drive" by MatDrive's own setting (their quota, else the default; 0 = no limit as null), and what it uses; null for an unknown subject.</summary>
+    public static async Task<(long Used, long? Limit)?> PersonalUsageAsync(AppDbContext db, string subject, CancellationToken ct = default)
+    {
+        var person = await db.Users.AsNoTracking().Where(u => u.ExternalSubject == subject).Select(u => new { u.Id, u.QuotaBytes }).FirstOrDefaultAsync(ct);
+        if (person is null)
+        {
+            return null;
+        }
+
+        var used = await db.Drives.AsNoTracking().Where(d => d.Kind == DriveKind.Personal && d.OwnerId == person.Id).Select(d => (long?)d.UsedBytes).FirstOrDefaultAsync(ct) ?? 0;
+        var limit = person.QuotaBytes ?? await DefaultQuotaAsync(db, ct);
+        return (used, limit > 0 ? limit : null);
+    }
+
+    private static async Task<long> DefaultQuotaAsync(AppDbContext db, CancellationToken ct)
+        => await db.SystemSettings.AsNoTracking().Where(s => s.Id == 1).Select(s => (long?)s.DefaultQuotaBytes).FirstOrDefaultAsync(ct) ?? new SystemSetting().DefaultQuotaBytes;
 
     /// <summary>Changes the used space of a drive by <paramref name="delta"/> bytes (in the database, so two uploads never lose a number).</summary>
     public static Task AddUsedAsync(AppDbContext db, long driveId, long delta, CancellationToken ct = default)

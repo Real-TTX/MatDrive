@@ -15,7 +15,7 @@ namespace MatDrive.Platform;
 /// The values come from the services (no DbContext here: this is the web layer).
 /// </summary>
 public sealed class MatDrivePlatform(InstanceService instance, LocationMonitor locations, MatBindings bindings, MatPlatformSettings settings, ILogger<MatDrivePlatform> log)
-    : IMatPlatformState, IMatPlatformConfiguration, IMatPlatformActions, IMatPlatformHealth
+    : IMatPlatformState, IMatPlatformConfiguration, IMatPlatformActions, IMatPlatformHealth, IMatPlatformQuotas
 {
     /// <summary>The id of MatDrive in the platform (and the default client id at MatIdentity), as in MatDesign <c>AppRegistry.cs</c>.</summary>
     public const string AppId = "matdrive";
@@ -121,7 +121,17 @@ public sealed class MatDrivePlatform(InstanceService instance, LocationMonitor l
 
         o.Role("admin", T("Administrator", "Administrator"));
         o.Role("user", T("Benutzer", "User"));
+
+        // What MatIdentity can set per person (2.4.0): the space of "My Drive". Without a value the person's own quota or the default of System counts.
+        o.Quota(ExternalIdentity.StorageQuota, T("Speicher der Ablage", "Space of My Drive"), MatQuotaUnits.Bytes,
+            hint: T("Leer: die eigene Einstellung von MatDrive (die Person, sonst System).", "Empty: MatDrive's own setting (the person, else System)."));
     }
+
+    /// <summary>What a person of MatIdentity uses of "My Drive" (<c>GET /api/quotas/{subject}</c>); MatPlatform puts MatIdentity's value over the limit.</summary>
+    public async Task<IReadOnlyDictionary<string, MatQuotaUsage>?> GetUsageAsync(string subject, MatPlatformCall call, CancellationToken ct)
+        => await instance.PersonalUsageAsync(subject, ct) is { } usage
+            ? new Dictionary<string, MatQuotaUsage> { [ExternalIdentity.StorageQuota] = new MatQuotaUsage(usage.Used, usage.Limit) }
+            : null;
 
     public async Task<IReadOnlyList<MatHealthCheck>> CheckHealthAsync(MatPlatformCall call, CancellationToken ct)
     {

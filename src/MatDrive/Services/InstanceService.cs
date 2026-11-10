@@ -83,6 +83,9 @@ public sealed class InstanceService(AppDbContext db, AccountService accounts, Bl
 
     public Task<bool> AnyUserAsync() => accounts.AnyUserAsync();
 
+    /// <summary>What the person of MatIdentity <paramref name="subject"/> uses of "My Drive" and MatDrive's own limit for it (null: the person is not known here).</summary>
+    public Task<(long Used, long? Limit)?> PersonalUsageAsync(string subject, CancellationToken ct = default) => Files.DriveService.PersonalUsageAsync(db, subject, ct);
+
     /// <summary>What MatDrive knows of the bound office editor (the health check <c>office.edit</c>).</summary>
     public Task<Office.OfficeStatus> OfficeStatusAsync(MatBinding office, CancellationToken ct = default) => Office.OfficeService.StatusAsync(db, office, ct);
 

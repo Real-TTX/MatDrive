@@ -6,7 +6,12 @@ using Microsoft.EntityFrameworkCore;
 namespace MatDrive.Services;
 
 /// <summary>A person as MatIdentity names it: the subject (<c>sub</c>), the address, the names and the role claim of this app (or null).</summary>
-public sealed record ExternalIdentity(string Subject, string? Email, string? Name, string? PreferredUserName, string? Role);
+/// <param name="Quotas">The quotas MatIdentity set for the person here (claim <c>mat_quotas</c>); null: not known (the account keeps what it has).</param>
+public sealed record ExternalIdentity(string Subject, string? Email, string? Name, string? PreferredUserName, string? Role, IReadOnlyDictionary<string, long?>? Quotas = null)
+{
+    /// <summary>The key of the quota of "My Drive" in MatDrive's definition (<c>o.Quota</c>).</summary>
+    public const string StorageQuota = "storage";
+}
 
 /// <summary>
 /// The outcome of <see cref="ExternalSignInService.SignInExternalAsync"/>: the account to sign in, or the id of the account that has the address and has to prove
@@ -51,6 +56,7 @@ public sealed class ExternalSignInService(AppDbContext db, AccountService accoun
             }
 
             await ApplyRoleAsync(user, identity.Role, created: false, ct);
+            ApplyQuota(user, identity);
             user.LastLoginDate = DateTime.UtcNow;
             await db.SaveChangesAsync(ct);
             return ExternalSignInResult.SignedIn(user);
@@ -121,6 +127,7 @@ public sealed class ExternalSignInService(AppDbContext db, AccountService accoun
 
         user.ExternalSubject = subject;
         await ApplyRoleAsync(user, identity.Role, created: false, ct);
+        ApplyQuota(user, identity);
         await db.SaveChangesAsync(ct);
         SessionService.Invalidate();
         logger.LogInformation("User {UserId} linked with MatIdentity subject {Subject} after its password", user.Id, subject);
@@ -148,6 +155,7 @@ public sealed class ExternalSignInService(AppDbContext db, AccountService accoun
             LastLoginDate = DateTime.UtcNow,
         };
         await ApplyRoleAsync(user, identity.Role, created: true, ct);
+        ApplyQuota(user, identity);
         db.Users.Add(user);
         await db.SaveChangesAsync(ct);
         await accounts.ProvisionAsync(user);
@@ -178,6 +186,29 @@ public sealed class ExternalSignInService(AppDbContext db, AccountService accoun
 
         user.Role = role;
         SessionService.Invalidate();
+    }
+
+    /// <summary>
+    /// The quota <c>storage</c> of MatIdentity: with a role (MatIdentity decides here) the value it sent counts (null = no limit) or, when it sent none, MatDrive's own
+    /// setting; without a role MatDrive's own setting. Unknown quotas (a link after the password) leave the account as it is.
+    /// </summary>
+    private static void ApplyQuota(User user, ExternalIdentity identity)
+    {
+        if (identity.Quotas is null)
+        {
+            return;
+        }
+
+        if (identity.Role is not null && identity.Quotas.TryGetValue(ExternalIdentity.StorageQuota, out var bytes))
+        {
+            user.IdentityQuotaSet = true;
+            user.IdentityQuotaBytes = bytes;
+        }
+        else
+        {
+            user.IdentityQuotaSet = false;
+            user.IdentityQuotaBytes = null;
+        }
     }
 
     private static string? FirstNonEmpty(params string?[] values) => values.FirstOrDefault(v => !string.IsNullOrWhiteSpace(v))?.Trim();

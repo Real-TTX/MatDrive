@@ -100,6 +100,15 @@ public sealed class User : SoftEntity
     /// <summary>The space of "My Drive" in bytes; null = the default of the installation.</summary>
     public long? QuotaBytes { get; set; }
 
+    /// <summary>
+    /// MatIdentity set the space of "My Drive" (the quota <c>storage</c> of the claim <c>mat_quotas</c>, at the last sign-in): <see cref="IdentityQuotaBytes"/> counts instead of
+    /// <see cref="QuotaBytes"/> and the default, and the page of the person shows it as fixed. False: MatDrive's own setting.
+    /// </summary>
+    public bool IdentityQuotaSet { get; set; }
+
+    /// <summary>The space MatIdentity set, in bytes; null = no limit (only while <see cref="IdentityQuotaSet"/>).</summary>
+    public long? IdentityQuotaBytes { get; set; }
+
     /// <summary>Mail about files and folders that are shared with the person (only when the installation can send mail).</summary>
     public bool MailOnShare { get; set; } = true;
 

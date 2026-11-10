@@ -9,10 +9,12 @@ zip/unzip, a text editor, content search). Every person has **My Drive**; teams 
 **shared** with people or through **links** (password, expiry, upload into a folder link); files keep **versions**; deleted items lie in the **trash**; **stars**,
 **recent**, **search** (names and the text of text files). **WebDAV** at `/dav/` (sign-in with the address and an app password). **MatOffice** (the sister app, its
 own container) opens and saves the office files (`.docx`, `.xlsx`, `.pptx`, `.csv`, the MatOffice formats) through the capability `office.edit` (`Services/Office`). Part
-of the Mat family on **MatPlatform 2.2** (the Mat app model, MatDesign `docs/APP-MODEL.md`): MatDrive **consumes** `office.edit`, `identity.oidc` (sign-in through
+of the Mat family on **MatPlatform 2.4** (the Mat app model, MatDesign `docs/APP-MODEL.md`): MatDrive **consumes** `office.edit`, `identity.oidc` (sign-in through
 **MatIdentity**) and `mail.smtp` (mail through **MatSMTP**), all optional; a broker (**Mattiverse**) makes the bindings and passes them as environment variables,
 without it an administrator enters `office.edit` by hand in *Administration → Connections* (`<mat-connections />`); it **contributes** the launcher Drive and two
-admin widgets to a shell. No code knows another app beyond the capability, and MatDrive works without any of the variables.
+admin widgets to a shell. It names one **quota** per person, `storage` (the space of My Drive): MatIdentity may set it (claim `mat_quotas`); the sign-in keeps it on the account
+(`User.IdentityQuotaSet` / `IdentityQuotaBytes`), `DriveService.UsageAsync` counts it before the person's own quota and the default, the person's page shows it as fixed, and
+`GET /api/quotas/{subject}` answers what is used. No code knows another app beyond the capability, and MatDrive works without any of the variables.
 
 Stack: ASP.NET Core on **.NET 10**, C#, **Razor Pages**, EF Core + **PostgreSQL** (metadata), the bytes of the files in the data volume (`/data/files`, `BlobStore`),
 the **MatUi** toolkit of the sister project MatDesign (`wwwroot/matui`, release 0.9.3, copied: never edit by hand), plain JavaScript ES modules without a build
@@ -71,7 +73,7 @@ src/MatDrive
   Services/Mail/MailService  MatSMTP through MailKit, queued in the background; off unless MATSMTP_HOST is set
   Services/Auth/             CurrentUser, PasswordService, SessionService (sessions in the DB), AccountService, ExternalSignInService (MatIdentity), AccountDataService (GDPR export/erase)
   Services/                  Ui (icons, logo, bytes), MenuService, InstanceService (numbers, settings, housekeeping), ListModels (toolbar, pager), Dates, Assets
-  MatPlatform/               copy of the shared package (MatDesign, 2.0.0; tools/matplatform-copy.js): platform contract 2, bindings (MatBindings, the store in
+  MatPlatform/               copy of the shared package (MatDesign, 2.4.0; tools/matplatform-copy.js): platform contract 2, bindings (MatBindings, the store in
                              /data/matplatform/bindings.json), the Connections area (<mat-connections />), MatIdentity sign-in, back-channel logout, MatSmtpSettings,
                              MAT_FRAME_ANCESTORS. Never edit here.
   Platform/                  MatDrivePlatform (tiles, settings, actions, consumes, launcher Drive + quick actions, admin widgets storage/users, health incl. office.edit;
